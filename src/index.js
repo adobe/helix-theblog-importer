@@ -1,0 +1,264 @@
+/*
+ * Copyright 2019 Adobe. All rights reserved.
+ * This file is licensed to you under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License. You may obtain a copy
+ * of the License at http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under
+ * the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR REPRESENTATIONS
+ * OF ANY KIND, either express or implied. See the License for the specific language
+ * governing permissions and limitations under the License.
+ */
+const { wrap } = require('@adobe/openwhisk-action-utils');
+const { logger: oLogger } = require('@adobe/openwhisk-action-logger');
+const { wrap: status } = require('@adobe/helix-status');
+const { epsagon } = require('@adobe/helix-epsagon');
+const fs = require('fs-extra');
+const jsdom = require('jsdom');
+const jquery = require('jquery');
+const path = require('path');
+
+const { getPages, createMarkdownFileFromResource } = require('./generic/importer');
+const { asyncForEach } = require('./generic/utils');
+
+const { JSDOM } = jsdom;
+
+const OUTPUT_PATH = 'content/output';
+
+const TYPE_AUTHOR = 'authors';
+const TYPE_POST = 'posts';
+const TYPE_TOPIC = 'topics';
+const TYPE_PRODUCT = 'products';
+
+async function handleAuthor($, logger) {
+  let postedBy = $('.author-link').text();
+  postedBy = postedBy.split(',')[0].trim();
+  const authorLink = $('.author-link')[0].href;
+  const postedOn = $('.post-date').text().toLowerCase();
+
+  const nodes = [];
+  nodes.push($('<p>').append(`by ${postedBy}`));
+  nodes.push($('<p>').append(postedOn));
+
+  const authorFilename = postedBy.toLowerCase().trim().replace(/\s/g, '-');
+  const fullPath = `${OUTPUT_PATH}/${TYPE_AUTHOR}/${authorFilename}.md`;
+  if (!await fs.exists(fullPath)) {
+    logger.info(`File ${fullPath} does not exist. Retrieving it now.`);
+    await asyncForEach(await getPages(logger, [authorLink]), async (resource) => {
+      const text = await fs.readFile(`${resource.localPath}`, 'utf8');
+      const dom = new JSDOM(text);
+      const { document } = dom.window;
+      const $2 = jquery(document.defaultView);
+
+      const $main = $2('.author-header');
+
+      // convert author-img from div to img for auto-processing
+      const $div = $2('.author-header .author-img');
+      const urlstr = $div.css('background-image');
+      const url = /\(([^)]+)\)/.exec(urlstr)[1];
+      $main.prepend(`<img src="${url}">`);
+      $div.remove();
+
+      const content = $main.html();
+      await createMarkdownFileFromResource(logger, `${OUTPUT_PATH}/${TYPE_AUTHOR}`, resource, content, authorFilename);
+    });
+  } else {
+    logger.info(`File ${fullPath} exists, no need to compute it again.`);
+  }
+
+  return nodes;
+}
+
+async function handleTopics($, logger) {
+  let topics = '';
+  $('.article-footer-topics-wrap .text').each((i, t) => {
+    topics += `${t.innerHTML}, `;
+  });
+
+  topics = topics.slice(0, -2);
+
+  await asyncForEach(
+    topics.split(',')
+      .filter((t) => t && t.length > 0)
+      .map((t) => t.trim()),
+    async (t) => {
+      const fullPath = `${OUTPUT_PATH}/${TYPE_TOPIC}/${t.replace(/\s/g, '-').toLowerCase()}.md`;
+      if (!await fs.exists(fullPath)) {
+        logger.info(`Found a new topic: ${t}`);
+        await createMarkdownFileFromResource(logger, `${OUTPUT_PATH}/${TYPE_TOPIC}`, {
+          filename: `${t.replace(/\s/gm, '-').replace(/&amp;/gm, '').toLowerCase()}.md`,
+        }, `<h1>${t}</h1>`);
+      } else {
+        logger.info(`Topic already exists: ${t}`);
+      }
+    },
+  );
+
+  return topics;
+}
+
+async function handleProducts($, localPath, logger) {
+  let output = '';
+  const products = [];
+  $('.sidebar-products-row .product-team-link').each((i, p) => {
+    const $p = $(p);
+    let { name } = path.parse(p.href);
+
+    const src = $p.find('img').attr('src');
+
+    // edge case, some link redirect to homepage, try to get product from image src
+    if (name === 'en') {
+      name = path.parse(src).name;
+    }
+
+    name = name.replace(/-/g, ' ').replace(/\b[a-z](?=[a-z]{2})/g, (letter) => letter.toUpperCase());
+
+    const fileName = name.replace(/\s/g, '-').toLowerCase();
+    products.push({
+      name,
+      fileName,
+      href: p.href,
+      imgSrc: `${fileName}/${path.parse(src).base}`,
+      imgLocalPath: `${localPath}/${src}`,
+    });
+    output += `${name}, `;
+  });
+
+  output = output.slice(0, -2);
+
+  await asyncForEach(
+    products,
+    async (p) => {
+      const fullPath = `${OUTPUT_PATH}/${TYPE_PRODUCT}/${p.fileName}.md`;
+      if (!await fs.exists(fullPath)) {
+        logger.info(`Found a new product: ${p.name}`);
+        await createMarkdownFileFromResource(logger, `${OUTPUT_PATH}/${TYPE_PRODUCT}`, {
+          filename: `${p.fileName}.md`,
+          children: [{
+            saved: true,
+            url: p.imgSrc,
+            localPath: p.imgLocalPath,
+          }],
+        }, `<h1>${p.name}</h1><a href='${p.href}'><img src='${p.imgSrc}'></a>`);
+      } else {
+        logger.info(`Product already exists: ${p.name}`);
+      }
+    },
+  );
+
+  return output;
+}
+
+/**
+ * This is the main function
+ * @param {string} name name of the person to greet
+ * @returns {object} a greeting
+ */
+async function main(params = {}) {
+  const {
+    url,
+    __ow_logger: logger,
+  } = params;
+
+  if (!url) {
+    return Promise.resolve({
+      body: 'Provide url parameter',
+    });
+  }
+
+  try {
+    logger.info(`Received url ${url}`);
+
+    const resources = await getPages(logger, [url]);
+    const resource = resources && resources.length > 0 ? resources[0] : null;
+
+    if (!resource) {
+      return Promise.resolve({
+        body: `Could not find a resource for provided url ${url}`,
+      });
+    }
+    logger.info(`found resource ${resource}`);
+
+    // encoding issue, do not use resource.text
+    const text = await fs.readFile(`${resource.localPath}`, 'utf8');
+    const dom = new JSDOM(text);
+    const { document } = dom.window;
+    const $ = jquery(document.defaultView);
+
+    const $main = $('.main-content');
+
+    // remove all existing hr to avoid section collisions
+    $main.find('hr').remove();
+
+    // remove all hidden elements
+    $main.find('.hidden-md-down, .hidden-xs-down').remove();
+
+    // add a thematic break after first titles
+    $('<hr>').insertAfter($('.article-header'));
+
+    // add a thematic break after hero banner
+    const $heroHr = $('<hr>').insertAfter($('.article-hero'));
+
+    $('<hr>').insertAfter($heroHr);
+    const nodes = await handleAuthor($, logger);
+    let previous = $heroHr;
+    nodes.forEach((n) => {
+      n.insertAfter(previous);
+      previous = n;
+    });
+
+    const topics = await handleTopics($, logger);
+    const products = await handleProducts(
+      $,
+      path.parse(resource.localPath).dir,
+      logger,
+    );
+
+    const $topicsWrap = $('<p>');
+    $topicsWrap.html(`Topics: ${topics}`);
+    const $productsWrap = $('<p>');
+    $productsWrap.html(`Products: ${products}`);
+
+    $main.append($topicsWrap);
+    $main.append($productsWrap);
+    $('<hr>').insertBefore($topicsWrap);
+
+    const headers = $('.article-header');
+    if (headers.length === 0) {
+      // posts with headers after image
+      const $articleRow = $('.article-title-row');
+      $('.article-content').prepend($articleRow);
+      $('<hr>').insertAfter($articleRow);
+    }
+    $('.article-collection-header').remove();
+
+    // remove author / products section
+    $('.article-author-wrap').remove();
+    // remove footer
+    $('.article-footer').remove();
+    // remove nav
+    $('#article-nav-wrap').remove();
+    // remove 'products in article'
+    $('.article-body-products').remove();
+
+    const content = $main.html();
+
+    await createMarkdownFileFromResource(logger, `${OUTPUT_PATH}/${TYPE_POST}`, resource, content);
+
+    logger.info('Process done!');
+    return Promise.resolve({
+      body: `Successfully imported ${url}`,
+    });
+  } catch (error) {
+    logger.error(error);
+    return Promise.resolve({
+      body: `Error while importing ${url} \n ${error.message} \n ${error.stack}`,
+    });
+  }
+}
+
+module.exports.main = wrap(main)
+  .with(epsagon)
+  .with(status)
+  .with(oLogger.trace)
+  .with(oLogger);
