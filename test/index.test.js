@@ -37,6 +37,9 @@ describe('Index Tests', () => {
       url: 'https://theblog.adobe.com/creating-adobe-experience-platform-pipeline-with-kafka',
       AZURE_BLOB_SAS: process.env.AZURE_BLOB_SAS,
       AZURE_BLOB_URI: process.env.AZURE_BLOB_URI,
+      AZURE_ONEDRIVE_CLIENT_ID: process.env.AZURE_ONEDRIVE_CLIENT_ID,
+      AZURE_ONEDRIVE_CLIENT_SECRET: process.env.AZURE_ONEDRIVE_CLIENT_SECRET,
+      AZURE_ONEDRIVE_SHARED_LINK: process.env.AZURE_ONEDRIVE_SHARED_LINK,
     });
     assert.deepEqual(result, { body: 'Successfully imported https://theblog.adobe.com/creating-adobe-experience-platform-pipeline-with-kafka' });
   });

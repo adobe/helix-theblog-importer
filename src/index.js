@@ -23,6 +23,7 @@ const BlogHandler = require('./generic/BlogHandler');
 const { asyncForEach } = require('./generic/utils');
 
 const FSHandler = require('./handlers/FSHandler');
+const OneDriveHandler = require('./handlers/OneDriveHandler');
 
 const { JSDOM } = jsdom;
 
@@ -161,11 +162,12 @@ async function main(params = {}) {
   const {
     url,
     __ow_logger: logger,
-    // AZURE_WORD2MD_CLIENT_ID: clientId,
-    // AZURE_WORD2MD_CLIENT_SECRET: clientSecret,
-    // AZURE_WORD2MD_REFRESH_TOKEN: refreshToken,
     AZURE_BLOB_SAS: azureBlobSAS,
     AZURE_BLOB_URI: azureBlobURI,
+    AZURE_ONEDRIVE_CLIENT_ID: oneDriveClientId,
+    AZURE_ONEDRIVE_CLIENT_SECRET: oneDriveClientSecret,
+    AZURE_ONEDRIVE_REFRESH_TOKEN: oneDriveRefreshToken,
+    AZURE_ONEDRIVE_SHARED_LINK: oneDriveSharedLink,
   } = params;
 
   if (!url) {
@@ -181,10 +183,24 @@ async function main(params = {}) {
   }
 
   try {
+    let handler = new FSHandler({
+      logger,
+    });
+
+    if (oneDriveClientId && oneDriveClientSecret) {
+      logger.info('OneDrive credentials provided - using OneDrive handler');
+      handler = new OneDriveHandler({
+        logger,
+        clientId: oneDriveClientId,
+        clientSecret: oneDriveClientSecret,
+        refreshToken: oneDriveRefreshToken,
+        sharedLink: oneDriveSharedLink,
+      });
+    } else {
+      logger.info('No OneDrive credentials provided - using default handler');
+    }
     const importer = new HelixImporter({
-      storageHandler: new FSHandler({
-        logger: this.logger,
-      }),
+      storageHandler: handler,
       blobHandler: new BlogHandler({
         azureBlobSAS,
         azureBlobURI,
