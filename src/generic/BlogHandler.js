@@ -174,6 +174,15 @@ class BlobHandler {
 
     return blob;
   }
+
+  async getBlobURI(buffer, contentType) {
+    const blob = this.createExternalResource(buffer, contentType);
+    const exists = await this.checkBlobExists(blob);
+    if (!exists) {
+      await this.upload(blob);
+    }
+    return blob;
+  }
 }
 
 module.exports = BlobHandler;

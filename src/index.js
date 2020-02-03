@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Adobe. All rights reserved.
+ * Copyright 2020 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License. You may obtain a copy
  * of the License at http://www.apache.org/licenses/LICENSE-2.0
@@ -18,8 +18,11 @@ const jsdom = require('jsdom');
 const jquery = require('jquery');
 const path = require('path');
 
-const { getPages, createMarkdownFileFromResource } = require('./generic/importer');
+const HelixImporter = require('./generic/HelixImporter');
+const BlogHandler = require('./generic/BlogHandler');
 const { asyncForEach } = require('./generic/utils');
+
+const FSHandler = require('./handlers/FSHandler');
 
 const { JSDOM } = jsdom;
 
@@ -30,7 +33,7 @@ const TYPE_POST = 'posts';
 const TYPE_TOPIC = 'topics';
 const TYPE_PRODUCT = 'products';
 
-async function handleAuthor($, logger) {
+async function handleAuthor(importer, $, logger) {
   let postedBy = $('.author-link').text();
   postedBy = postedBy.split(',')[0].trim();
   const authorLink = $('.author-link')[0].href;
@@ -44,7 +47,7 @@ async function handleAuthor($, logger) {
   const fullPath = `${OUTPUT_PATH}/${TYPE_AUTHOR}/${authorFilename}.md`;
   if (!await fs.exists(fullPath)) {
     logger.info(`File ${fullPath} does not exist. Retrieving it now.`);
-    await asyncForEach(await getPages(logger, [authorLink]), async (resource) => {
+    await asyncForEach(await importer.getPages([authorLink]), async (resource) => {
       const text = await fs.readFile(`${resource.localPath}`, 'utf8');
       const dom = new JSDOM(text);
       const { document } = dom.window;
@@ -60,7 +63,7 @@ async function handleAuthor($, logger) {
       $div.remove();
 
       const content = $main.html();
-      await createMarkdownFileFromResource(logger, `${OUTPUT_PATH}/${TYPE_AUTHOR}`, resource, content, authorFilename);
+      await importer.createMarkdownFileFromResource(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, resource, content, authorFilename);
     });
   } else {
     logger.info(`File ${fullPath} exists, no need to compute it again.`);
@@ -69,7 +72,7 @@ async function handleAuthor($, logger) {
   return nodes;
 }
 
-async function handleTopics($, logger) {
+async function handleTopics(importer, $, logger) {
   let topics = '';
   $('.article-footer-topics-wrap .text').each((i, t) => {
     topics += `${t.innerHTML}, `;
@@ -85,7 +88,7 @@ async function handleTopics($, logger) {
       const fullPath = `${OUTPUT_PATH}/${TYPE_TOPIC}/${t.replace(/\s/g, '-').toLowerCase()}.md`;
       if (!await fs.exists(fullPath)) {
         logger.info(`Found a new topic: ${t}`);
-        await createMarkdownFileFromResource(logger, `${OUTPUT_PATH}/${TYPE_TOPIC}`, {
+        await importer.createMarkdownFileFromResource(`${OUTPUT_PATH}/${TYPE_TOPIC}`, {
           filename: `${t.replace(/\s/gm, '-').replace(/&amp;/gm, '').toLowerCase()}.md`,
         }, `<h1>${t}</h1>`);
       } else {
@@ -97,7 +100,7 @@ async function handleTopics($, logger) {
   return topics;
 }
 
-async function handleProducts($, localPath, logger) {
+async function handleProducts(importer, $, localPath, logger) {
   let output = '';
   const products = [];
   $('.sidebar-products-row .product-team-link').each((i, p) => {
@@ -132,7 +135,7 @@ async function handleProducts($, localPath, logger) {
       const fullPath = `${OUTPUT_PATH}/${TYPE_PRODUCT}/${p.fileName}.md`;
       if (!await fs.exists(fullPath)) {
         logger.info(`Found a new product: ${p.name}`);
-        await createMarkdownFileFromResource(logger, `${OUTPUT_PATH}/${TYPE_PRODUCT}`, {
+        await importer.createMarkdownFileFromResource(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, {
           filename: `${p.fileName}.md`,
           children: [{
             saved: true,
@@ -158,18 +161,40 @@ async function main(params = {}) {
   const {
     url,
     __ow_logger: logger,
+    // AZURE_WORD2MD_CLIENT_ID: clientId,
+    // AZURE_WORD2MD_CLIENT_SECRET: clientSecret,
+    // AZURE_WORD2MD_REFRESH_TOKEN: refreshToken,
+    AZURE_BLOB_SAS: azureBlobSAS,
+    AZURE_BLOB_URI: azureBlobURI,
   } = params;
 
   if (!url) {
     return Promise.resolve({
-      body: 'Provide url parameter',
+      body: 'Missing url parameter',
+    });
+  }
+
+  if (!azureBlobSAS || !azureBlobURI) {
+    return Promise.resolve({
+      body: 'Missing Azure Blog Storage credentials',
     });
   }
 
   try {
+    const importer = new HelixImporter({
+      storageHandler: new FSHandler({
+        logger: this.logger,
+      }),
+      blobHandler: new BlogHandler({
+        azureBlobSAS,
+        azureBlobURI,
+      }),
+      logger,
+    });
+
     logger.info(`Received url ${url}`);
 
-    const resources = await getPages(logger, [url]);
+    const resources = await importer.getPages([url]);
     const resource = resources && resources.length > 0 ? resources[0] : null;
 
     if (!resource) {
@@ -200,15 +225,16 @@ async function main(params = {}) {
     const $heroHr = $('<hr>').insertAfter($('.article-hero'));
 
     $('<hr>').insertAfter($heroHr);
-    const nodes = await handleAuthor($, logger);
+    const nodes = await handleAuthor(importer, $, logger);
     let previous = $heroHr;
     nodes.forEach((n) => {
       n.insertAfter(previous);
       previous = n;
     });
 
-    const topics = await handleTopics($, logger);
+    const topics = await handleTopics(importer, $, logger);
     const products = await handleProducts(
+      importer,
       $,
       path.parse(resource.localPath).dir,
       logger,
@@ -243,7 +269,7 @@ async function main(params = {}) {
 
     const content = $main.html();
 
-    await createMarkdownFileFromResource(logger, `${OUTPUT_PATH}/${TYPE_POST}`, resource, content);
+    await importer.createMarkdownFileFromResource(`${OUTPUT_PATH}/${TYPE_POST}`, resource, content);
 
     logger.info('Process done!');
     return Promise.resolve({

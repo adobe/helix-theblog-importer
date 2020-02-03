@@ -17,10 +17,12 @@
 const assert = require('assert');
 const index = require('../src/index.js');
 
+require('dotenv').config();
+
 describe('Index Tests', () => {
   it('index function is present', async () => {
     const result = await index.main({});
-    assert.deepEqual(result, { body: 'Provide url parameter' });
+    assert.deepEqual(result, { body: 'Missing url parameter' });
   });
 
   it('index function returns an object', async () => {
@@ -33,7 +35,9 @@ describe('Index Tests', () => {
   it('index with url', async () => {
     const result = await index.main({
       url: 'https://theblog.adobe.com/creating-adobe-experience-platform-pipeline-with-kafka',
+      AZURE_BLOB_SAS: process.env.AZURE_BLOB_SAS,
+      AZURE_BLOB_URI: process.env.AZURE_BLOB_URI,
     });
-    console.log('result', result);
+    assert.deepEqual(result, { body: 'Successfully imported https://theblog.adobe.com/creating-adobe-experience-platform-pipeline-with-kafka' });
   });
 });
