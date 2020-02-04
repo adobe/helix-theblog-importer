@@ -22,9 +22,6 @@ class OneDriveHandler extends HelixImporterStorageHandler {
       clientId: opts.clientId,
       clientSecret: opts.clientSecret,
       refreshToken: opts.refreshToken,
-      tenant: opts.tenant,
-      accessToken: opts.accessToken,
-      expiresOn: opts.expiresOn,
     });
   }
 

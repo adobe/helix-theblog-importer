@@ -39,9 +39,7 @@ describe('Index Tests', () => {
       AZURE_BLOB_URI: process.env.AZURE_BLOB_URI,
       AZURE_ONEDRIVE_CLIENT_ID: process.env.AZURE_ONEDRIVE_CLIENT_ID,
       AZURE_ONEDRIVE_CLIENT_SECRET: process.env.AZURE_ONEDRIVE_CLIENT_SECRET,
-      AZURE_ONEDRIVE_TENANT: process.env.AZURE_ONEDRIVE_TENANT,
-      AZURE_ONEDRIVE_ACCESS_TOKEN: process.env.AZURE_ONEDRIVE_ACCESS_TOKEN,
-      AZURE_ONEDRIVE_EXPIRES_ON: process.env.AZURE_ONEDRIVE_EXPIRES_ON,
+      AZURE_ONEDRIVE_REFRESH_TOKEN: process.env.AZURE_ONEDRIVE_REFRESH_TOKEN,
       AZURE_ONEDRIVE_SHARED_LINK: process.env.AZURE_ONEDRIVE_SHARED_LINK,
     });
     assert.deepEqual(result, { body: 'Successfully imported https://theblog.adobe.com/creating-adobe-experience-platform-pipeline-with-kafka' });
