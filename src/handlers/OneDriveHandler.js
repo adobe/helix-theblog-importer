@@ -22,13 +22,16 @@ class OneDriveHandler extends HelixImporterStorageHandler {
       clientId: opts.clientId,
       clientSecret: opts.clientSecret,
       refreshToken: opts.refreshToken,
+      tenant: opts.tenant,
+      accessToken: opts.accessToken,
+      expiresOn: opts.expiresOn,
     });
   }
 
   async put(filePath, content) {
     this.logger.debug(`Uploading file to OneDrive: ${filePath}`);
     const rootItem = await this.drive.getDriveItemFromShareLink(this.sharedLink);
-    await this.drive.uploadDriveItem(content, rootItem, filePath);
+    await this.drive.uploadDriveItem(content, rootItem, `/${filePath}`);
   }
 }
 

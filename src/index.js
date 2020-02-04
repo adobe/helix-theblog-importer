@@ -167,6 +167,9 @@ async function main(params = {}) {
     AZURE_ONEDRIVE_CLIENT_ID: oneDriveClientId,
     AZURE_ONEDRIVE_CLIENT_SECRET: oneDriveClientSecret,
     AZURE_ONEDRIVE_REFRESH_TOKEN: oneDriveRefreshToken,
+    AZURE_ONEDRIVE_TENANT: oneDriveTenant,
+    AZURE_ONEDRIVE_ACCESS_TOKEN: oneDriveAccessToken,
+    AZURE_ONEDRIVE_EXPIRES_ON: oneDriveExpiresOn,
     AZURE_ONEDRIVE_SHARED_LINK: oneDriveSharedLink,
   } = params;
 
@@ -194,6 +197,9 @@ async function main(params = {}) {
         clientId: oneDriveClientId,
         clientSecret: oneDriveClientSecret,
         refreshToken: oneDriveRefreshToken,
+        tenant: oneDriveTenant,
+        accessToken: oneDriveAccessToken,
+        expiresOn: oneDriveExpiresOn,
         sharedLink: oneDriveSharedLink,
       });
     } else {
@@ -292,9 +298,8 @@ async function main(params = {}) {
       body: `Successfully imported ${url}`,
     });
   } catch (error) {
-    logger.error(error);
     return Promise.resolve({
-      body: `Error while importing ${url} \n ${error.message} \n ${error.stack}`,
+      body: `Error while importing ${url} \n ${error.message}`,
     });
   }
 }
