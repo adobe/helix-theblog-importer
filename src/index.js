@@ -295,13 +295,13 @@ async function main(params = {}) {
     logger.info(`Received url ${url}`);
 
     // check if url has already been processed
-    const urls = await handler.get(URLS_CSV);
-    const records = parse(urls, {
+    let urls = await handler.get(URLS_CSV);
+    let records = parse(urls, {
       columns: ['year', 'url', 'importDate'],
       skip_empty_lines: true,
     });
 
-    const index = records.findIndex((rec) => rec.url === url);
+    let index = records.findIndex((r) => r.url === url);
     const rec = index > -1 ? records[index] : null;
     if (rec && rec.importDate) {
       // url has already been imported
@@ -320,6 +320,17 @@ async function main(params = {}) {
     });
 
     const year = await doImport(importer, url, logger);
+
+    // read the file again: import might be a long process
+    // something maybe have changed the csv file in the meantime
+    urls = await handler.get(URLS_CSV);
+    records = parse(urls, {
+      columns: ['year', 'url', 'importDate'],
+      skip_empty_lines: true,
+    });
+
+    index = records.findIndex((r) => r.url === url);
+
     if (index > -1) {
       // url was already in file
       records[index].importDate = new Date().toISOString();
