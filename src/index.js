@@ -13,6 +13,8 @@ const { wrap } = require('@adobe/openwhisk-action-utils');
 const { logger: oLogger } = require('@adobe/openwhisk-action-logger');
 const { wrap: status } = require('@adobe/helix-status');
 const { epsagon } = require('@adobe/helix-epsagon');
+const parse = require('csv-parse/lib/sync');
+const stringify = require('csv-stringify/lib/sync');
 const fs = require('fs-extra');
 const jsdom = require('jsdom');
 const jquery = require('jquery');
@@ -33,6 +35,8 @@ const TYPE_AUTHOR = 'authors';
 const TYPE_POST = 'posts';
 const TYPE_TOPIC = 'topics';
 const TYPE_PRODUCT = 'products';
+
+const URLS_CSV = '/urls.csv';
 
 async function handleAuthor(importer, $, logger) {
   let postedBy = $('.author-link').text();
@@ -153,6 +157,94 @@ async function handleProducts(importer, $, localPath, logger) {
   return output;
 }
 
+async function doImport(importer, url, logger) {
+  const resources = await importer.getPages([url]);
+  const resource = resources && resources.length > 0 ? resources[0] : null;
+
+  if (!resource) {
+    return Promise.resolve({
+      body: `Could not find a resource for provided url ${url}`,
+    });
+  }
+  logger.info(`found resource ${resource}`);
+
+  // encoding issue, do not use resource.text
+  const text = await fs.readFile(`${resource.localPath}`, 'utf8');
+  const dom = new JSDOM(text);
+  const { document } = dom.window;
+  const $ = jquery(document.defaultView);
+
+  let year = new Date().getFullYear();
+  // extract year from article:published_time metadata
+  const pubDate = $('[property="article:published_time"]').attr('content');
+  if (pubDate) {
+    year = new Date(pubDate).getFullYear();
+  }
+
+  const $main = $('.main-content');
+
+  // remove all existing hr to avoid section collisions
+  $main.find('hr').remove();
+
+  // remove all hidden elements
+  $main.find('.hidden-md-down, .hidden-xs-down').remove();
+
+  // add a thematic break after first titles
+  $('<hr>').insertAfter($('.article-header'));
+
+  // add a thematic break after hero banner
+  const $heroHr = $('<hr>').insertAfter($('.article-hero'));
+
+  $('<hr>').insertAfter($heroHr);
+  const nodes = await handleAuthor(importer, $, logger);
+  let previous = $heroHr;
+  nodes.forEach((n) => {
+    n.insertAfter(previous);
+    previous = n;
+  });
+
+  const topics = await handleTopics(importer, $, logger);
+  const products = await handleProducts(
+    importer,
+    $,
+    path.parse(resource.localPath).dir,
+    logger,
+  );
+
+  const $topicsWrap = $('<p>');
+  $topicsWrap.html(`Topics: ${topics}`);
+  const $productsWrap = $('<p>');
+  $productsWrap.html(`Products: ${products}`);
+
+  $main.append($topicsWrap);
+  $main.append($productsWrap);
+  $('<hr>').insertBefore($topicsWrap);
+
+  const headers = $('.article-header');
+  if (headers.length === 0) {
+    // posts with headers after image
+    const $articleRow = $('.article-title-row');
+    $('.article-content').prepend($articleRow);
+    $('<hr>').insertAfter($articleRow);
+  }
+  $('.article-collection-header').remove();
+
+  // remove author / products section
+  $('.article-author-wrap').remove();
+  // remove footer
+  $('.article-footer').remove();
+  // remove nav
+  $('#article-nav-wrap').remove();
+  // remove 'products in article'
+  $('.article-body-products').remove();
+
+  const content = $main.html();
+
+  await importer.createMarkdownFileFromResource(`${OUTPUT_PATH}/${TYPE_POST}/${year}`, resource, content);
+
+  return year;
+}
+
 /**
  * This is the main function
  * @param {string} name name of the person to greet
@@ -199,6 +291,23 @@ async function main(params = {}) {
     } else {
       logger.info('No OneDrive credentials provided - using default handler');
     }
+
+    logger.info(`Received url ${url}`);
+
+    // check if url has already been processed
+    const urls = await handler.get(URLS_CSV);
+    const records = parse(urls, {
+      columns: ['year', 'url', 'importDate'],
+      skip_empty_lines: true,
+    });
+
+    if (records.filter((rec) => rec.url === url && rec.importDate).length > 0) {
+      // url has already been imported
+      return Promise.resolve({
+        body: `${url} has already been imported.`,
+      });
+    }
+
     const importer = new HelixImporter({
       storageHandler: handler,
       blobHandler: new BlogHandler({
@@ -208,84 +317,14 @@ async function main(params = {}) {
       logger,
     });
 
-    logger.info(`Received url ${url}`);
-
-    const resources = await importer.getPages([url]);
-    const resource = resources && resources.length > 0 ? resources[0] : null;
-
-    if (!resource) {
-      return Promise.resolve({
-        body: `Could not find a resource for provided url ${url}`,
-      });
-    }
-    logger.info(`found resource ${resource}`);
-
-    // encoding issue, do not use resource.text
-    const text = await fs.readFile(`${resource.localPath}`, 'utf8');
-    const dom = new JSDOM(text);
-    const { document } = dom.window;
-    const $ = jquery(document.defaultView);
-
-    const $main = $('.main-content');
-
-    // remove all existing hr to avoid section collisions
-    $main.find('hr').remove();
-
-    // remove all hidden elements
-    $main.find('.hidden-md-down, .hidden-xs-down').remove();
-
-    // add a thematic break after first titles
-    $('<hr>').insertAfter($('.article-header'));
-
-    // add a thematic break after hero banner
-    const $heroHr = $('<hr>').insertAfter($('.article-hero'));
-
-    $('<hr>').insertAfter($heroHr);
-    const nodes = await handleAuthor(importer, $, logger);
-    let previous = $heroHr;
-    nodes.forEach((n) => {
-      n.insertAfter(previous);
-      previous = n;
+    const year = await doImport(importer, url, logger);
+    records.push({
+      year,
+      url,
+      importDate: new Date().toISOString(),
     });
-
-    const topics = await handleTopics(importer, $, logger);
-    const products = await handleProducts(
-      importer,
-      $,
-      path.parse(resource.localPath).dir,
-      logger,
-    );
-
-    const $topicsWrap = $('<p>');
-    $topicsWrap.html(`Topics: ${topics}`);
-    const $productsWrap = $('<p>');
-    $productsWrap.html(`Products: ${products}`);
-
-    $main.append($topicsWrap);
-    $main.append($productsWrap);
-    $('<hr>').insertBefore($topicsWrap);
-
-    const headers = $('.article-header');
-    if (headers.length === 0) {
-      // posts with headers after image
-      const $articleRow = $('.article-title-row');
-      $('.article-content').prepend($articleRow);
-      $('<hr>').insertAfter($articleRow);
-    }
-    $('.article-collection-header').remove();
-
-    // remove author / products section
-    $('.article-author-wrap').remove();
-    // remove footer
-    $('.article-footer').remove();
-    // remove nav
-    $('#article-nav-wrap').remove();
-    // remove 'products in article'
-    $('.article-body-products').remove();
-
-    const content = $main.html();
-
-    await importer.createMarkdownFileFromResource(`${OUTPUT_PATH}/${TYPE_POST}`, resource, content);
+    const csv = stringify(records);
+    await handler.put(URLS_CSV, csv);
 
     logger.info('Process done!');
     return Promise.resolve({

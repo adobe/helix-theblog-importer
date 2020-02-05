@@ -10,9 +10,12 @@
  * governing permissions and limitations under the License.
  */
 
+/* eslint-disable class-methods-use-this */
+
 class HelixImporterStorageHandler {
-  // eslint-disable-next-line class-methods-use-this
   put() {}
+
+  get() {}
 }
 
 module.exports = HelixImporterStorageHandler;

@@ -26,6 +26,11 @@ class FSHandler extends HelixImporterStorageHandler {
     await fs.mkdirs(path.dirname(filePath));
     await fs.writeFile(filePath, content);
   }
+
+  async get(filePath) {
+    this.logger.debug(`Reading file from file system: ${filePath}`);
+    return fs.readFile(filePath);
+  }
 }
 
 module.exports = FSHandler;

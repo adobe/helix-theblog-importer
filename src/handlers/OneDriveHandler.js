@@ -28,7 +28,15 @@ class OneDriveHandler extends HelixImporterStorageHandler {
   async put(filePath, content) {
     this.logger.debug(`Uploading file to OneDrive: ${filePath}`);
     const rootItem = await this.drive.getDriveItemFromShareLink(this.sharedLink);
-    await this.drive.uploadDriveItem(content, rootItem, `/${filePath}`);
+    const path = filePath.indexOf('/') === 0 ? filePath : `/${filePath}`;
+    await this.drive.uploadDriveItem(content, rootItem, path);
+  }
+
+  async get(filePath) {
+    this.logger.debug(`Reading file from OneDrive: ${filePath}`);
+    const rootItem = await this.drive.getDriveItemFromShareLink(this.sharedLink);
+    const driveItem = await this.drive.getDriveItem(rootItem, filePath);
+    return this.drive.downloadDriveItem(driveItem);
   }
 }
 
