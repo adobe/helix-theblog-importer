@@ -301,7 +301,9 @@ async function main(params = {}) {
       skip_empty_lines: true,
     });
 
-    if (records.filter((rec) => rec.url === url && rec.importDate).length > 0) {
+    const index = records.findIndex((rec) => rec.url === url);
+    const rec = index > -1 ? records[index] : null;
+    if (rec && rec.importDate) {
       // url has already been imported
       return Promise.resolve({
         body: `${url} has already been imported.`,
@@ -318,11 +320,17 @@ async function main(params = {}) {
     });
 
     const year = await doImport(importer, url, logger);
-    records.push({
-      year,
-      url,
-      importDate: new Date().toISOString(),
-    });
+    if (index > -1) {
+      // url was already in file
+      records[index].importDate = new Date().toISOString();
+    } else {
+      // new record
+      records.push({
+        year,
+        url,
+        importDate: new Date().toISOString(),
+      });
+    }
     const csv = stringify(records);
     await handler.put(URLS_CSV, csv);
 
