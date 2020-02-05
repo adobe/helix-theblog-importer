@@ -13,9 +13,9 @@
     "docs": "npx jsdoc2md -c .jsdoc.json --files 'src/*.js'  > docs/API.md",
     "commit": "git-cz",
     "build": "wsk-builder -v",
-    "deploy": "env-cmd --use-shell 'wsk-builder --web-secure $X_REQUIRE_WHISK_AUTH -v --deploy --test=/_status_check/healthcheck.json'",
-    "deploy-sequences": "env-cmd --use-shell 'wsk-builder --web-secure $X_REQUIRE_WHISK_AUTH --no-build -no-hints -l latest -l major -l minor'",
-    "deploy-ci": "env-cmd --use-shell 'wsk-builder --web-secure $X_REQUIRE_WHISK_AUTH -v --deploy --test=/_status_check/healthcheck.json --pkgVersion=ci$CIRCLE_BUILD_NUM -l ci'"
+    "deploy": "wsk-builder --web-export false -v --deploy",
+    "deploy-sequences": "wsk-builder --web-export false --no-build -no-hints -l latest -l major -l minor",
+    "deploy-ci": "wsk-builder --web-export false -v --deploy --pkgVersion=ci$CIRCLE_BUILD_NUM -l ci"
   },
   "wsk": {
     "name": "helix-services-private/helix-theblog-importer@${version}",
