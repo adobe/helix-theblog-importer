@@ -1,6 +1,13 @@
 # Helix Service
 
-> An example service to be used in and with Project Helix
+Helix TheBlog importer action:
+
+- if url is not part of the urls list
+- download url content
+- parse the dom, remove undesired blocks, extracts author, post, products and topics
+- transform to various snippets into markdown
+- upload to OneDrive
+- update the urls list
 
 ## Status
 [![codecov](https://img.shields.io/codecov/c/github/adobe/helix-service.svg)](https://codecov.io/gh/adobe/helix-service)
