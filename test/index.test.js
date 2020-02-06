@@ -34,7 +34,7 @@ describe('Index Tests', () => {
 describe('Index Tests', () => {
   it('index with url', async () => {
     const result = await index.main({
-      url: 'https://theblog.adobe.com/creating-adobe-experience-platform-pipeline-with-kafka',
+      url: 'https://theblog.adobe.com/10-reasons-to-drop-what-youre-doing-and-register-for-adobe-summit-2020/',
       AZURE_BLOB_SAS: process.env.AZURE_BLOB_SAS,
       AZURE_BLOB_URI: process.env.AZURE_BLOB_URI,
       AZURE_ONEDRIVE_CLIENT_ID: process.env.AZURE_ONEDRIVE_CLIENT_ID,
@@ -42,6 +42,6 @@ describe('Index Tests', () => {
       AZURE_ONEDRIVE_REFRESH_TOKEN: process.env.AZURE_ONEDRIVE_REFRESH_TOKEN,
       AZURE_ONEDRIVE_SHARED_LINK: process.env.AZURE_ONEDRIVE_SHARED_LINK,
     });
-    assert.deepEqual(result, { body: 'Successfully imported https://theblog.adobe.com/creating-adobe-experience-platform-pipeline-with-kafka' });
+    assert.deepEqual(result, { body: 'Successfully imported https://theblog.adobe.com/10-reasons-to-drop-what-youre-doing-and-register-for-adobe-summit-2020/' });
   });
 });

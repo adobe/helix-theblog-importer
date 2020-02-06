@@ -263,15 +263,11 @@ async function main(params = {}) {
   } = params;
 
   if (!url) {
-    return Promise.resolve({
-      body: 'Missing url parameter',
-    });
+    throw new Error('Missing url parameter');
   }
 
   if (!azureBlobSAS || !azureBlobURI) {
-    return Promise.resolve({
-      body: 'Missing Azure Blog Storage credentials',
-    });
+    throw new Error('Missing Azure Blog Storage credentials');
   }
 
   try {
@@ -299,6 +295,7 @@ async function main(params = {}) {
     let records = parse(urls, {
       columns: ['year', 'url', 'importDate'],
       skip_empty_lines: true,
+      relax_column_count: true,
     });
 
     let index = records.findIndex((r) => r.url === url);
@@ -327,6 +324,7 @@ async function main(params = {}) {
     records = parse(urls, {
       columns: ['year', 'url', 'importDate'],
       skip_empty_lines: true,
+      relax_column_count: true,
     });
 
     index = records.findIndex((r) => r.url === url);
@@ -342,7 +340,9 @@ async function main(params = {}) {
         importDate: new Date().toISOString(),
       });
     }
-    const csv = stringify(records);
+    const csv = stringify(records, {
+      columns: ['year', 'url', 'importDate'],
+    });
     await handler.put(URLS_CSV, csv);
 
     logger.info('Process done!');
@@ -350,9 +350,8 @@ async function main(params = {}) {
       body: `Successfully imported ${url}`,
     });
   } catch (error) {
-    return Promise.resolve({
-      body: `Error while importing ${url} \n ${error.message}`,
-    });
+    logger.error(error.message);
+    throw error;
   }
 }
 
