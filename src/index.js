@@ -29,14 +29,14 @@ const OneDriveHandler = require('./handlers/OneDriveHandler');
 
 const { JSDOM } = jsdom;
 
-const OUTPUT_PATH = 'content/output';
+const OUTPUT_PATH = 'en';
 
 const TYPE_AUTHOR = 'authors';
-const TYPE_POST = 'posts';
+const TYPE_POST = 'archive';
 const TYPE_TOPIC = 'topics';
 const TYPE_PRODUCT = 'products';
 
-const URLS_CSV = '/urls.csv';
+const URLS_CSV = '/importer/urls.csv';
 
 async function handleAuthor(importer, $, logger) {
   let postedBy = $('.author-link').text();
