@@ -32,7 +32,7 @@ describe('Index Tests', () => {
 });
 
 describe('Index Tests', () => {
-  it('index with url', async () => {
+  it.only('index with url', async () => {
     const result = await index.main({
       url: 'https://theblog.adobe.com/10-reasons-to-drop-what-youre-doing-and-register-for-adobe-summit-2020/',
       AZURE_BLOB_SAS: process.env.AZURE_BLOB_SAS,

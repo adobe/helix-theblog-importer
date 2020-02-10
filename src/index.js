@@ -13,8 +13,6 @@ const { wrap } = require('@adobe/openwhisk-action-utils');
 const { logger: oLogger } = require('@adobe/openwhisk-action-logger');
 const { wrap: status } = require('@adobe/helix-status');
 const { epsagon } = require('@adobe/helix-epsagon');
-const parse = require('csv-parse/lib/sync');
-const stringify = require('csv-stringify/lib/sync');
 const fs = require('fs-extra');
 const jsdom = require('jsdom');
 const jquery = require('jquery');
@@ -24,8 +22,8 @@ const HelixImporter = require('./generic/HelixImporter');
 const BlogHandler = require('./generic/BlogHandler');
 const { asyncForEach } = require('./generic/utils');
 
-const FSHandler = require('./handlers/FSHandler');
 const OneDriveHandler = require('./handlers/OneDriveHandler');
+const ExcelHandler = require('./handlers/ExcelHandler');
 
 const { JSDOM } = jsdom;
 
@@ -36,7 +34,9 @@ const TYPE_POST = 'archive';
 const TYPE_TOPIC = 'topics';
 const TYPE_PRODUCT = 'products';
 
-const URLS_CSV = '/importer/urls.csv';
+const URLS_XLSX = '/admin/importer/urls.xlsx';
+const URLS_XLSX_WORKSHEET = 'urls';
+const URLS_XLSX_TABLE = 'listOfURLS';
 
 async function handleAuthor(importer, $, logger) {
   let postedBy = $('.author-link').text();
@@ -271,9 +271,8 @@ async function main(params = {}) {
   }
 
   try {
-    let handler = new FSHandler({
-      logger,
-    });
+    let handler;
+    let excelHandler;
 
     if (oneDriveClientId && oneDriveClientSecret) {
       logger.info('OneDrive credentials provided - using OneDrive handler');
@@ -284,23 +283,34 @@ async function main(params = {}) {
         refreshToken: oneDriveRefreshToken,
         sharedLink: oneDriveSharedLink,
       });
+
+      excelHandler = new ExcelHandler({
+        logger,
+        clientId: oneDriveClientId,
+        clientSecret: oneDriveClientSecret,
+        refreshToken: oneDriveRefreshToken,
+        sharedLink: oneDriveSharedLink,
+      });
     } else {
-      logger.info('No OneDrive credentials provided - using default handler');
+      logger.info('No OneDrive credentials provided');
+      throw new Error('Missing OneDrive credentials');
     }
 
     logger.info(`Received url ${url}`);
 
     // check if url has already been processed
-    let urls = await handler.get(URLS_CSV);
-    let records = parse(urls, {
-      columns: ['year', 'url', 'importDate'],
-      skip_empty_lines: true,
-      relax_column_count: true,
-    });
+    const rows = await excelHandler.getRows(URLS_XLSX, URLS_XLSX_WORKSHEET, URLS_XLSX_TABLE);
 
-    let index = records.findIndex((r) => r.url === url);
-    const rec = index > -1 ? records[index] : null;
-    if (rec && rec.importDate) {
+    // rows.value[n].values[0][0] -> year
+    // rows.value[n].values[0][1] -> url
+    // rows.value[n].values[0][2] -> import date
+    const index = rows && rows.value
+      ? rows.value.findIndex(
+        (r) => (r.values.length > 0 && r.values[0].length > 1 ? r.values[0][1] === url : false),
+      )
+      : -1;
+    const rec = index > -1 ? rows.value[index] : null;
+    if (rec && rec.values[0][2]) {
       // url has already been imported
       return Promise.resolve({
         body: `${url} has already been imported.`,
@@ -318,32 +328,12 @@ async function main(params = {}) {
 
     const year = await doImport(importer, url, logger);
 
-    // read the file again: import might be a long process
-    // something maybe have changed the csv file in the meantime
-    urls = await handler.get(URLS_CSV);
-    records = parse(urls, {
-      columns: ['year', 'url', 'importDate'],
-      skip_empty_lines: true,
-      relax_column_count: true,
-    });
-
-    index = records.findIndex((r) => r.url === url);
-
-    if (index > -1) {
-      // url was already in file
-      records[index].importDate = new Date().toISOString();
-    } else {
-      // new record
-      records.push({
-        year,
-        url,
-        importDate: new Date().toISOString(),
-      });
-    }
-    const csv = stringify(records, {
-      columns: ['year', 'url', 'importDate'],
-    });
-    await handler.put(URLS_CSV, csv);
+    await excelHandler.addRow(
+      URLS_XLSX,
+      URLS_XLSX_WORKSHEET,
+      URLS_XLSX_TABLE,
+      [[year, url, new Date().toISOString()]],
+    );
 
     logger.info('Process done!');
     return Promise.resolve({
