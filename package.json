@@ -48,6 +48,7 @@
     "jquery": "^3.4.1",
     "jsdom": "^16.0.1",
     "mime-types": "^2.1.26",
+    "openwhisk": "^3.21.1",
     "path": "^0.12.7",
     "rehype-parse": "^6.0.2",
     "rehype-remark": "^7.0.0",

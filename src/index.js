@@ -16,6 +16,7 @@ const { epsagon } = require('@adobe/helix-epsagon');
 const fs = require('fs-extra');
 const jsdom = require('jsdom');
 const jquery = require('jquery');
+const openwhisk = require('openwhisk');
 const path = require('path');
 
 const HelixImporter = require('./generic/HelixImporter');
@@ -37,6 +38,9 @@ const TYPE_PRODUCT = 'products';
 const URLS_XLSX = '/admin/importer/urls.xlsx';
 const URLS_XLSX_WORKSHEET = 'urls';
 const URLS_XLSX_TABLE = 'listOfURLS';
+
+const INDEXER_NAMESPACE = 'helix-index';
+const INDEXER_ACTION = 'helix-services/index-files@latest';
 
 async function handleAuthor(importer, $, logger) {
   let postedBy = $('.author-link').text();
@@ -260,6 +264,8 @@ async function main(params = {}) {
     AZURE_ONEDRIVE_CLIENT_SECRET: oneDriveClientSecret,
     AZURE_ONEDRIVE_REFRESH_TOKEN: oneDriveRefreshToken,
     AZURE_ONEDRIVE_SHARED_LINK: oneDriveSharedLink,
+    INDEXER_OPENWHISK_API_KEY: owIndexerKey,
+    INDEXER_API_HOST: owIndexerHost,
   } = params;
 
   if (!url) {
@@ -334,6 +340,30 @@ async function main(params = {}) {
       URLS_XLSX_TABLE,
       [[year, url, new Date().toISOString()]],
     );
+
+    // TEMP_FIX: run indexer action
+    const ow = openwhisk({
+      api_key: owIndexerKey,
+      apihost: owIndexerHost,
+      namespace: INDEXER_NAMESPACE,
+    });
+    await ow.actions.invoke({
+      name: INDEXER_ACTION,
+      blocking: false,
+      result: false,
+      params: {
+        owner: 'davidnuescheler',
+        repo: 'theblog',
+        ref: 'master',
+        branch: 'master',
+        namespace: 'helix-index',
+        package: 'index-pipelines',
+        sha: 'initial',
+        path: `ms/en/archive/${year}/${path.parse(url).name}.html`,
+      },
+    }).catch((error) => {
+      logger.error(`Error processing indexer actions for ${url}: ${error.message}`);
+    });
 
     logger.info('Process done!');
     return Promise.resolve({
