@@ -35,7 +35,7 @@ const TYPE_POST = 'archive';
 const TYPE_TOPIC = 'topics';
 const TYPE_PRODUCT = 'products';
 
-const URLS_XLSX = '/admin/importer/urls.xlsx';
+const URLS_XLSX = '/importer/urls.xlsx';
 const URLS_XLSX_WORKSHEET = 'urls';
 const URLS_XLSX_TABLE = 'listOfURLS';
 
@@ -263,7 +263,8 @@ async function main(params = {}) {
     AZURE_ONEDRIVE_CLIENT_ID: oneDriveClientId,
     AZURE_ONEDRIVE_CLIENT_SECRET: oneDriveClientSecret,
     AZURE_ONEDRIVE_REFRESH_TOKEN: oneDriveRefreshToken,
-    AZURE_ONEDRIVE_SHARED_LINK: oneDriveSharedLink,
+    AZURE_ONEDRIVE_CONTENT_LINK: oneDriveContentLink,
+    AZURE_ONEDRIVE_ADMIN_LINK: oneDriveAdminLink,
     INDEXER_OPENWHISK_API_KEY: owIndexerKey,
     INDEXER_API_HOST: owIndexerHost,
   } = params;
@@ -287,7 +288,7 @@ async function main(params = {}) {
         clientId: oneDriveClientId,
         clientSecret: oneDriveClientSecret,
         refreshToken: oneDriveRefreshToken,
-        sharedLink: oneDriveSharedLink,
+        sharedLink: oneDriveContentLink,
       });
 
       excelHandler = new ExcelHandler({
@@ -295,7 +296,7 @@ async function main(params = {}) {
         clientId: oneDriveClientId,
         clientSecret: oneDriveClientSecret,
         refreshToken: oneDriveRefreshToken,
-        sharedLink: oneDriveSharedLink,
+        sharedLink: oneDriveAdminLink,
       });
     } else {
       logger.info('No OneDrive credentials provided');
