@@ -347,10 +347,11 @@ async function main(params = {}) {
       apihost: owIndexerHost,
       namespace: INDEXER_NAMESPACE,
     });
-    await ow.actions.invoke({
+
+    const indexer = await ow.actions.invoke({
       name: INDEXER_ACTION,
-      blocking: false,
-      result: false,
+      blocking: true,
+      result: true,
       params: {
         owner: 'davidnuescheler',
         repo: 'theblog',
@@ -364,6 +365,8 @@ async function main(params = {}) {
     }).catch((error) => {
       logger.error(`Error processing indexer actions for ${url}: ${error.message}`);
     });
+
+    logger.debug('Indexer response', indexer);
 
     logger.info('Process done!');
     return Promise.resolve({
