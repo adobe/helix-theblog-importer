@@ -21,8 +21,10 @@ require('dotenv').config();
 
 describe('Index Tests', () => {
   it('index with url', async () => {
+    const url = 'https://theblog.adobe.com/look-dont-touch-the-rise-of-drone-footage/';
     const result = await index.main({
-      url: 'https://theblog.adobe.com/adobe-continues-strong-investment-in-anz-with-adobe-experience-platform-and-new-data-centre/',
+      url,
+      force: true,
       AZURE_BLOB_SAS: process.env.AZURE_BLOB_SAS,
       AZURE_BLOB_URI: process.env.AZURE_BLOB_URI,
       AZURE_ONEDRIVE_CLIENT_ID: process.env.AZURE_ONEDRIVE_CLIENT_ID,
@@ -33,6 +35,6 @@ describe('Index Tests', () => {
       INDEXER_OPENWHISK_API_KEY: process.env.INDEXER_OPENWHISK_API_KEY,
       INDEXER_API_HOST: process.env.INDEXER_API_HOST,
     });
-    assert.deepEqual(result, { body: 'Successfully imported https://theblog.adobe.com/adobe-continues-strong-investment-in-anz-with-adobe-experience-platform-and-new-data-centre/' });
+    assert.deepEqual(result, { body: `Successfully imported ${url}` });
   });
 });

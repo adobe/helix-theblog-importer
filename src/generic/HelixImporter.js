@@ -57,7 +57,7 @@ class HelixImporter {
         { selector: 'style' },
       ],
       subdirectories: [
-        { directory: 'img', extensions: ['.git', '.jpg', '.jpeg', '.png', '.svg'] },
+        { directory: 'img', extensions: ['.gif', '.jpg', '.jpeg', '.png', '.svg'] },
       ],
       plugins: [
         new (class {
@@ -91,7 +91,7 @@ class HelixImporter {
 
               // else default behavior
               const filename = byTypeFilenameGenerator(resource, {
-                subdirectories: [{ directory, extensions: ['.git', '.jpg', '.jpeg', '.png', '.svg'] }],
+                subdirectories: [{ directory, extensions: ['.gif', '.jpg', '.jpeg', '.png', '.svg'] }],
                 defaultFilename,
               }, occupiedFilenames);
               occupiedFilenames.push(filename);

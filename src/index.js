@@ -257,6 +257,7 @@ async function doImport(importer, url, logger) {
 async function main(params = {}) {
   const {
     url,
+    force,
     __ow_logger: logger,
     AZURE_BLOB_SAS: azureBlobSAS,
     AZURE_BLOB_URI: azureBlobURI,
@@ -317,7 +318,7 @@ async function main(params = {}) {
       )
       : -1;
     const rec = index > -1 ? rows.value[index] : null;
-    if (rec && rec.values[0][2]) {
+    if (!force && rec && rec.values[0][2]) {
       // url has already been imported
       return Promise.resolve({
         body: `${url} has already been imported.`,
