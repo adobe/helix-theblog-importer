@@ -14,6 +14,8 @@ const unified = require('unified');
 const parse = require('rehype-parse');
 const rehype2remark = require('rehype-remark');
 const stringify = require('remark-stringify');
+const fs = require('fs-extra');
+const os = require('os');
 const path = require('path');
 const scrape = require('website-scraper');
 const SaveToExistingDirectoryPlugin = require('website-scraper-existing-directory');
@@ -25,23 +27,12 @@ class HelixImporter {
     this.storageHandler = opts.storageHandler;
     this.blobHandler = opts.blobHandler;
     this.logger = opts.logger;
-    //     this.clientSecret = opts.clientSecret;
-    //     this.refreshToken = opts.refreshToken;
-    //     this._log = opts.log || console;
-    //     this.tenant = opts.tenant || AZ_DEFAULT_TENANT;
-
-    //     tokenCache.accessToken = opts.accessToken || '';
-    //     tokenCache.expiresOn = opts.expiresOn || undefined;
-
-    //     if (!this.clientId || !this.clientSecret) {
-    //       throw new Error('Missing clientId or clientSecret parameter.');
-    //     }
   }
 
   async getPages(urls) {
     const options = {
       urls,
-      directory: 'tmp', //await fs.mkdtemp(path.join(os.tmpdir(), 'htmlimporter-get-pages-')),
+      directory: await fs.mkdtemp(path.join(os.tmpdir(), 'htmlimporter-get-pages-')),
       recursive: false,
       urlFilter(url) {
         return url.indexOf('adobe') !== -1;
@@ -51,9 +42,6 @@ class HelixImporter {
         { selector: 'img', attr: 'src' },
         { selector: '[style]', attr: 'style' },
         { selector: 'style' },
-      ],
-      subdirectories: [
-        // { directory: 'img', extensions: ['.gif', '.jpg', '.jpeg', '.png', '.svg'] },
       ],
       plugins: [
         new (class {
