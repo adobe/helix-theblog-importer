@@ -39,10 +39,7 @@ const URLS_XLSX = '/importer/urls.xlsx';
 const URLS_XLSX_WORKSHEET = 'urls';
 const URLS_XLSX_TABLE = 'listOfURLS';
 
-const INDEXER_NAMESPACE = 'helix-index';
-const INDEXER_ACTION = 'helix-services/index-files@latest';
-
-async function handleAuthor(importer, $, logger) {
+async function handleAuthor(importer, $) {
   let postedBy = $('.author-link').text();
   postedBy = postedBy.split(',')[0].trim();
   const authorLink = $('.author-link')[0].href;
@@ -53,30 +50,24 @@ async function handleAuthor(importer, $, logger) {
   nodes.push($('<p>').append(postedOn));
 
   const authorFilename = postedBy.toLowerCase().trim().replace(/\s/g, '-');
-  const fullPath = `${OUTPUT_PATH}/${TYPE_AUTHOR}/${authorFilename}.md`;
-  if (!await fs.exists(fullPath)) {
-    logger.info(`File ${fullPath} does not exist. Retrieving it now.`);
-    await asyncForEach(await importer.getPages([authorLink]), async (resource) => {
-      const text = await fs.readFile(`${resource.localPath}`, 'utf8');
-      const dom = new JSDOM(text);
-      const { document } = dom.window;
-      const $2 = jquery(document.defaultView);
+  await asyncForEach(await importer.getPages([authorLink]), async (resource) => {
+    const text = await fs.readFile(`${resource.localPath}`, 'utf8');
+    const dom = new JSDOM(text);
+    const { document } = dom.window;
+    const $2 = jquery(document.defaultView);
 
-      const $main = $2('.author-header');
+    const $main = $2('.author-header');
 
-      // convert author-img from div to img for auto-processing
-      const $div = $2('.author-header .author-img');
-      const urlstr = $div.css('background-image');
-      const url = /\(([^)]+)\)/.exec(urlstr)[1];
-      $main.prepend(`<img src="${url}">`);
-      $div.remove();
+    // convert author-img from div to img for auto-processing
+    const $div = $2('.author-header .author-img');
+    const urlstr = $div.css('background-image');
+    const url = /\(([^)]+)\)/.exec(urlstr)[1];
+    $main.prepend(`<img src="${url}">`);
+    $div.remove();
 
-      const content = $main.html();
-      await importer.createMarkdownFileFromResource(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, resource, content, authorFilename);
-    });
-  } else {
-    logger.info(`File ${fullPath} exists, no need to compute it again.`);
-  }
+    const content = $main.html();
+    await importer.createMarkdownFileFromResource(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, resource, content, authorFilename);
+  });
 
   return nodes;
 }
@@ -94,15 +85,10 @@ async function handleTopics(importer, $, logger) {
       .filter((t) => t && t.length > 0)
       .map((t) => t.trim()),
     async (t) => {
-      const fullPath = `${OUTPUT_PATH}/${TYPE_TOPIC}/${t.replace(/\s/g, '-').toLowerCase()}.md`;
-      if (!await fs.exists(fullPath)) {
-        logger.info(`Found a new topic: ${t}`);
-        await importer.createMarkdownFileFromResource(`${OUTPUT_PATH}/${TYPE_TOPIC}`, {
-          filename: `${t.replace(/\s/gm, '-').replace(/&amp;/gm, '').toLowerCase()}.md`,
-        }, `<h1>${t}</h1>`);
-      } else {
-        logger.info(`Topic already exists: ${t}`);
-      }
+      logger.info(`Found a new topic: ${t}`);
+      await importer.createMarkdownFileFromResource(`${OUTPUT_PATH}/${TYPE_TOPIC}`, {
+        filename: `${t.replace(/\s/gm, '-').replace(/&amp;/gm, '').toLowerCase()}.md`,
+      }, `<h1>${t}</h1>`);
     },
   );
 
@@ -130,8 +116,7 @@ async function handleProducts(importer, $, localPath, logger) {
       name,
       fileName,
       href: p.href,
-      imgSrc: `${fileName}/${path.parse(src).base}`,
-      imgLocalPath: `${localPath}/${src}`,
+      imgSrc: src,
     });
     output += `${name}, `;
   });
@@ -141,20 +126,14 @@ async function handleProducts(importer, $, localPath, logger) {
   await asyncForEach(
     products,
     async (p) => {
-      const fullPath = `${OUTPUT_PATH}/${TYPE_PRODUCT}/${p.fileName}.md`;
-      if (!await fs.exists(fullPath)) {
-        logger.info(`Found a new product: ${p.name}`);
-        await importer.createMarkdownFileFromResource(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, {
-          filename: `${p.fileName}.md`,
-          children: [{
-            saved: true,
-            url: p.imgSrc,
-            localPath: p.imgLocalPath,
-          }],
-        }, `<h1>${p.name}</h1><a href='${p.href}'><img src='${p.imgSrc}'></a>`);
-      } else {
-        logger.info(`Product already exists: ${p.name}`);
-      }
+      logger.info(`Found a new product: ${p.name}`);
+      await importer.createMarkdownFileFromResource(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, {
+        filename: `${p.fileName}.md`,
+        children: [{
+          saved: false,
+          url: p.imgSrc,
+        }],
+      }, `<h1>${p.name}</h1><a href='${p.href}'><img src='${p.imgSrc}'></a>`);
     },
   );
 
