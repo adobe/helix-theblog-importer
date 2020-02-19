@@ -16,7 +16,6 @@ const { epsagon } = require('@adobe/helix-epsagon');
 const fs = require('fs-extra');
 const jsdom = require('jsdom');
 const jquery = require('jquery');
-const openwhisk = require('openwhisk');
 const path = require('path');
 
 const HelixImporter = require('./generic/HelixImporter');
