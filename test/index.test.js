@@ -32,8 +32,6 @@ describe('Index Tests', () => {
       AZURE_ONEDRIVE_REFRESH_TOKEN: process.env.AZURE_ONEDRIVE_REFRESH_TOKEN,
       AZURE_ONEDRIVE_CONTENT_LINK: process.env.AZURE_ONEDRIVE_CONTENT_LINK,
       AZURE_ONEDRIVE_ADMIN_LINK: process.env.AZURE_ONEDRIVE_ADMIN_LINK,
-      INDEXER_OPENWHISK_API_KEY: process.env.INDEXER_OPENWHISK_API_KEY,
-      INDEXER_API_HOST: process.env.INDEXER_API_HOST,
     });
     assert.deepEqual(result, { body: `Successfully imported ${url}` });
   });

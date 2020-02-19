@@ -53,6 +53,7 @@
     "rehype-parse": "^6.0.2",
     "rehype-remark": "^7.0.0",
     "remark-stringify": "^7.0.4",
+    "request": "^2.88.2",
     "request-promise-native": "^1.0.8",
     "unified": "^8.4.2",
     "website-scraper": "^4.2.0",

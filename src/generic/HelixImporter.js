@@ -14,12 +14,8 @@ const unified = require('unified');
 const parse = require('rehype-parse');
 const rehype2remark = require('rehype-remark');
 const stringify = require('remark-stringify');
-const fs = require('fs-extra');
-const mime = require('mime-types');
-const os = require('os');
 const path = require('path');
 const scrape = require('website-scraper');
-const byTypeFilenameGenerator = require('website-scraper/lib/filename-generator/by-type');
 const SaveToExistingDirectoryPlugin = require('website-scraper-existing-directory');
 
 const { asyncForEach } = require('./utils');
@@ -45,7 +41,7 @@ class HelixImporter {
   async getPages(urls) {
     const options = {
       urls,
-      directory: await fs.mkdtemp(path.join(os.tmpdir(), 'htmlimporter-get-pages-')),
+      directory: 'tmp', //await fs.mkdtemp(path.join(os.tmpdir(), 'htmlimporter-get-pages-')),
       recursive: false,
       urlFilter(url) {
         return url.indexOf('adobe') !== -1;
@@ -57,19 +53,15 @@ class HelixImporter {
         { selector: 'style' },
       ],
       subdirectories: [
-        { directory: 'img', extensions: ['.gif', '.jpg', '.jpeg', '.png', '.svg'] },
+        // { directory: 'img', extensions: ['.gif', '.jpg', '.jpeg', '.png', '.svg'] },
       ],
       plugins: [
         new (class {
           // eslint-disable-next-line class-methods-use-this
           apply(registerAction) {
-            let occupiedFilenames;
-            let defaultFilename;
             let rootDirectory;
 
             registerAction('beforeStart', ({ options: opt }) => {
-              occupiedFilenames = [];
-              defaultFilename = opt.defaultFilename;
               rootDirectory = opt.directory;
             });
             registerAction('generateFilename', async ({ resource }) => {
@@ -82,22 +74,6 @@ class HelixImporter {
                 resource.localPath = `${rootDirectory}/${name}.html`;
                 return { filename: `${name}.html` };
               }
-
-              let directory = 'img';
-              if (resource.parent) {
-                const u = resource.parent.url.replace('/index.html', '').replace(/\/$/g, '');
-                directory = u.substring(u.lastIndexOf('/') + 1, u.length);
-              }
-
-              // else default behavior
-              const filename = byTypeFilenameGenerator(resource, {
-                subdirectories: [{ directory, extensions: ['.gif', '.jpg', '.jpeg', '.png', '.svg'] }],
-                defaultFilename,
-              }, occupiedFilenames);
-              occupiedFilenames.push(filename);
-              // eslint-disable-next-line no-param-reassign
-              resource.localPath = `${rootDirectory}/${filename}`;
-              return { filename };
             });
           }
         })(),
@@ -132,21 +108,16 @@ class HelixImporter {
         let { contents } = file;
 
         if (links && links.length > 0) {
-          // copy resources (imgs...) folder or to azure
-          await asyncForEach(links, async (l) => {
-            const rName = path.parse(l.url).base;
-            const filteredRName = rName.replace('@', '%40');
-            // try to be smart, only copy images "referenced" in the content
-            if (l.saved && file.contents.indexOf(filteredRName) !== -1) {
-              // if blob handler is defined, upload image and update reference
-              const bitmap = fs.readFileSync(l.localPath);
-              const ext = path.parse(rName).ext.replace('.', '');
+          // copy resources (imgs...) to blob handler (azure)
 
-              const externalResource = await this.blobHandler.getBlobURI(
-                Buffer.from(bitmap),
-                mime.lookup(ext),
-              );
-              contents = contents.replace(new RegExp(`${resourceName}/${filteredRName.replace('.', '\\.')}`, 'g'), externalResource.uri);
+          await asyncForEach(links, async (l) => {
+            if (file.contents.indexOf(l.url) !== -1) {
+              try {
+                const externalURL = await this.blobHandler.copyFromURL(l.url);
+                contents = contents.replace(new RegExp(`${l.url.replace('.', '\\.')}`, 'g'), externalURL);
+              } catch (error) {
+                this.logger.error(`Error while copying ${l.url} to blob handler`, error.message);
+              }
             }
           });
         }

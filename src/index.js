@@ -266,8 +266,6 @@ async function main(params = {}) {
     AZURE_ONEDRIVE_REFRESH_TOKEN: oneDriveRefreshToken,
     AZURE_ONEDRIVE_CONTENT_LINK: oneDriveContentLink,
     AZURE_ONEDRIVE_ADMIN_LINK: oneDriveAdminLink,
-    INDEXER_OPENWHISK_API_KEY: owIndexerKey,
-    INDEXER_API_HOST: owIndexerHost,
   } = params;
 
   if (!url) {
@@ -343,32 +341,6 @@ async function main(params = {}) {
       [[year, url, new Date().toISOString()]],
     );
 
-    // TEMP_FIX: run indexer action
-    const ow = openwhisk({
-      api_key: owIndexerKey,
-      apihost: owIndexerHost,
-      namespace: INDEXER_NAMESPACE,
-    });
-
-    const indexer = await ow.actions.invoke({
-      name: INDEXER_ACTION,
-      blocking: true,
-      result: true,
-      params: {
-        owner: 'davidnuescheler',
-        repo: 'theblog',
-        ref: 'master',
-        branch: 'master',
-        namespace: 'helix-index',
-        package: 'index-pipelines',
-        sha: 'initial',
-        path: `ms/en/archive/${year}/${path.parse(url).name}.html`,
-      },
-    }).catch((error) => {
-      logger.error(`Error processing indexer actions for ${url}: ${error.message}`);
-    });
-
-    logger.debug('Indexer response', indexer);
 
     logger.info('Process done!');
     return Promise.resolve({

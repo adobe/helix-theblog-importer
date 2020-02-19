@@ -10,6 +10,7 @@
  * governing permissions and limitations under the License.
  */
 const crypto = require('crypto');
+const request = require('request');
 const rp = require('request-promise-native');
 
 // cache external urls
@@ -182,6 +183,48 @@ class BlobHandler {
       await this.upload(blob);
     }
     return blob;
+  }
+
+  async copyFromURL(url) {
+    const computeSha = () => new Promise((resolve, reject) => {
+      const hasher = crypto.createHash('sha1');
+      hasher.setEncoding('hex');
+      request.get(url)
+        .pipe(hasher)
+        .on('finish', () => {
+          const sha1 = hasher.read();
+          this._log.debug(`sha1 computed for ${url}: ${sha1}`);
+          resolve(sha1);
+        })
+        .on('error', (err) => {
+          reject(err);
+        });
+    });
+
+
+    const sha1 = await computeSha();
+    const uri = `${this._azureBlobURI}/${sha1}`;
+    if (!await this.checkBlobExists({ uri })) {
+      try {
+        // copying might take a while, only wait for the process start response
+        await rp({
+          uri: `${uri}${this._azureBlobSAS}`,
+          method: 'PUT',
+          encoding: null,
+          resolveWithFullResponse: true,
+          headers: {
+            'x-ms-date': new Date().toString(),
+            'x-ms-blob-type': 'BlockBlob',
+            'x-ms-copy-source': url,
+          },
+        });
+      } catch (error) {
+        this._log.error('Error in x-ms-copy-source request', error.message);
+      }
+    } else {
+      this._log.info(`Won't copy ${url}: already exists as ${uri}`);
+    }
+    return uri;
   }
 }
 
