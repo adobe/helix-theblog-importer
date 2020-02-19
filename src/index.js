@@ -13,9 +13,7 @@ const { wrap } = require('@adobe/openwhisk-action-utils');
 const { logger: oLogger } = require('@adobe/openwhisk-action-logger');
 const { wrap: status } = require('@adobe/helix-status');
 const { epsagon } = require('@adobe/helix-epsagon');
-const fs = require('fs-extra');
-const jsdom = require('jsdom');
-const jquery = require('jquery');
+const cheerio = require('cheerio');
 const path = require('path');
 
 const HelixImporter = require('./generic/HelixImporter');
@@ -24,8 +22,6 @@ const { asyncForEach } = require('./generic/utils');
 
 const OneDriveHandler = require('./handlers/OneDriveHandler');
 const ExcelHandler = require('./handlers/ExcelHandler');
-
-const { JSDOM } = jsdom;
 
 const OUTPUT_PATH = 'en';
 
@@ -41,7 +37,7 @@ const URLS_XLSX_TABLE = 'listOfURLS';
 async function handleAuthor(importer, $) {
   let postedBy = $('.author-link').text();
   postedBy = postedBy.split(',')[0].trim();
-  const authorLink = $('.author-link')[0].href;
+  const authorLink = $('.author-link').attr('href');
   const postedOn = $('.post-date').text().toLowerCase();
 
   const nodes = [];
@@ -49,24 +45,20 @@ async function handleAuthor(importer, $) {
   nodes.push($('<p>').append(postedOn));
 
   const authorFilename = postedBy.toLowerCase().trim().replace(/\s/g, '-');
-  await asyncForEach(await importer.getPages([authorLink]), async (resource) => {
-    const text = await fs.readFile(`${resource.localPath}`, 'utf8');
-    const dom = new JSDOM(text);
-    const { document } = dom.window;
-    const $2 = jquery(document.defaultView);
+  const html = await importer.getPageContent(authorLink);
+  const $2 = cheerio.load(html);
 
-    const $main = $2('.author-header');
+  const $main = $2('.author-header');
 
-    // convert author-img from div to img for auto-processing
-    const $div = $2('.author-header .author-img');
-    const urlstr = $div.css('background-image');
-    const url = /\(([^)]+)\)/.exec(urlstr)[1];
-    $main.prepend(`<img src="${url}">`);
-    $div.remove();
+  // convert author-img from div to img for auto-processing
+  const $div = $2('.author-header .author-img');
+  const urlstr = $div.css('background-image');
+  const url = /\(([^)]+)\)/.exec(urlstr)[1];
+  $main.prepend(`<img src="${url}">`);
+  $div.remove();
 
-    const content = $main.html();
-    await importer.createMarkdownFileFromResource(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, resource, content, authorFilename);
-  });
+  const content = $main.html();
+  await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, authorFilename, content);
 
   return nodes;
 }
@@ -74,7 +66,7 @@ async function handleAuthor(importer, $) {
 async function handleTopics(importer, $, logger) {
   let topics = '';
   $('.article-footer-topics-wrap .text').each((i, t) => {
-    topics += `${t.innerHTML}, `;
+    topics += `${$(t).html()}, `;
   });
 
   topics = topics.slice(0, -2);
@@ -85,21 +77,19 @@ async function handleTopics(importer, $, logger) {
       .map((t) => t.trim()),
     async (t) => {
       logger.info(`Found a new topic: ${t}`);
-      await importer.createMarkdownFileFromResource(`${OUTPUT_PATH}/${TYPE_TOPIC}`, {
-        filename: `${t.replace(/\s/gm, '-').replace(/&amp;/gm, '').toLowerCase()}.md`,
-      }, `<h1>${t}</h1>`);
+      await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_TOPIC}`, `${t.replace(/\s/gm, '-').replace(/&amp;/gm, '').toLowerCase()}`, `<h1>${t}</h1>`);
     },
   );
 
   return topics;
 }
 
-async function handleProducts(importer, $, localPath, logger) {
+async function handleProducts(importer, $, logger) {
   let output = '';
   const products = [];
   $('.sidebar-products-row .product-team-link').each((i, p) => {
     const $p = $(p);
-    let { name } = path.parse(p.href);
+    let { name } = path.parse($(p).attr('href'));
 
     const src = $p.find('img').attr('src');
 
@@ -126,13 +116,7 @@ async function handleProducts(importer, $, localPath, logger) {
     products,
     async (p) => {
       logger.info(`Found a new product: ${p.name}`);
-      await importer.createMarkdownFileFromResource(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, {
-        filename: `${p.fileName}.md`,
-        children: [{
-          saved: false,
-          url: p.imgSrc,
-        }],
-      }, `<h1>${p.name}</h1><a href='${p.href}'><img src='${p.imgSrc}'></a>`);
+      await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, `${p.fileName}`, `<h1>${p.name}</h1><a href='${p.href}'><img src='${p.imgSrc}'></a>`);
     },
   );
 
@@ -140,21 +124,9 @@ async function handleProducts(importer, $, localPath, logger) {
 }
 
 async function doImport(importer, url, logger) {
-  const resources = await importer.getPages([url]);
-  const resource = resources && resources.length > 0 ? resources[0] : null;
+  const html = await importer.getPageContent(url);
 
-  if (!resource) {
-    return Promise.resolve({
-      body: `Could not find a resource for provided url ${url}`,
-    });
-  }
-  logger.info(`found resource ${resource}`);
-
-  // encoding issue, do not use resource.text
-  const text = await fs.readFile(`${resource.localPath}`, 'utf8');
-  const dom = new JSDOM(text);
-  const { document } = dom.window;
-  const $ = jquery(document.defaultView);
+  const $ = cheerio.load(html);
 
   let year = new Date().getFullYear();
   // extract year from article:published_time metadata
@@ -186,12 +158,7 @@ async function doImport(importer, url, logger) {
   });
 
   const topics = await handleTopics(importer, $, logger);
-  const products = await handleProducts(
-    importer,
-    $,
-    path.parse(resource.localPath).dir,
-    logger,
-  );
+  const products = await handleProducts(importer, $, logger);
 
   const $topicsWrap = $('<p>');
   $topicsWrap.html(`Topics: ${topics}`);
@@ -222,7 +189,7 @@ async function doImport(importer, url, logger) {
 
   const content = $main.html();
 
-  await importer.createMarkdownFileFromResource(`${OUTPUT_PATH}/${TYPE_POST}/${year}`, resource, content);
+  await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_POST}/${year}`, path.parse(url).name, content);
 
   return year;
 }

@@ -14,11 +14,8 @@ const unified = require('unified');
 const parse = require('rehype-parse');
 const rehype2remark = require('rehype-remark');
 const stringify = require('remark-stringify');
-const fs = require('fs-extra');
-const os = require('os');
-const path = require('path');
-const scrape = require('website-scraper');
-const SaveToExistingDirectoryPlugin = require('website-scraper-existing-directory');
+const axios = require('axios');
+const cheerio = require('cheerio');
 
 const { asyncForEach } = require('./utils');
 
@@ -29,54 +26,17 @@ class HelixImporter {
     this.logger = opts.logger;
   }
 
-  async getPages(urls) {
-    const options = {
-      urls,
-      directory: await fs.mkdtemp(path.join(os.tmpdir(), 'htmlimporter-get-pages-')),
-      recursive: false,
-      urlFilter(url) {
-        return url.indexOf('adobe') !== -1;
-      },
-      sources: [
-        // only keep the imgs
-        { selector: 'img', attr: 'src' },
-        { selector: '[style]', attr: 'style' },
-        { selector: 'style' },
-      ],
-      plugins: [
-        new (class {
-          // eslint-disable-next-line class-methods-use-this
-          apply(registerAction) {
-            let rootDirectory;
+  async getPageContent(url) {
+    this.logger.info(`Get page content for ${url}`);
+    const response = await axios({
+      url,
+      maxRedirects: 0,
+    });
 
-            registerAction('beforeStart', ({ options: opt }) => {
-              rootDirectory = opt.directory;
-            });
-            registerAction('generateFilename', async ({ resource }) => {
-              if (resource.filename === 'index.html') {
-                // replace index.html by last segment in path
-                // and remove last / if it is the last character
-                const u = resource.url.replace('/index.html', '').replace(/\/$/g, '');
-                const name = u.substring(u.lastIndexOf('/') + 1, u.length);
-                // eslint-disable-next-line no-param-reassign
-                resource.localPath = `${rootDirectory}/${name}.html`;
-                return { filename: `${name}.html` };
-              }
-            });
-          }
-        })(),
-        new SaveToExistingDirectoryPlugin(),
-      ],
-    };
-
-    this.logger.info(`Starting to scrape urls ${urls.join(',')}`);
-    const result = await scrape(options);
-    this.logger.info(`Done with scraping. Downloaded ${result.length} page(s).`);
-
-    return result;
+    return response.data;
   }
 
-  async createMarkdownFile(directory, resourceName, name, content, links = []) {
+  async createMarkdownFile(directory, name, content) {
     this.logger.info(`Creating a new MD file: ${directory}/${name}.md`);
     return unified()
       .use(parse, { emitParseErrors: true, duplicateAttribute: false })
@@ -95,16 +55,19 @@ class HelixImporter {
         const p = `${directory}/${name}.md`;
         let { contents } = file;
 
-        if (links && links.length > 0) {
+        // process image links
+        const $ = cheerio.load(content);
+        const imgs = $('img');
+        if (imgs && imgs.length > 0) {
           // copy resources (imgs...) to blob handler (azure)
-
-          await asyncForEach(links, async (l) => {
-            if (file.contents.indexOf(l.url) !== -1) {
+          await asyncForEach(imgs, async (img) => {
+            const src = $(img).attr('src');
+            if (file.contents.indexOf(src) !== -1) {
               try {
-                const externalURL = await this.blobHandler.copyFromURL(l.url);
-                contents = contents.replace(new RegExp(`${l.url.replace('.', '\\.')}`, 'g'), externalURL);
+                const externalURL = await this.blobHandler.copyFromURL(src);
+                contents = contents.replace(new RegExp(`${src.replace('.', '\\.')}`, 'g'), externalURL);
               } catch (error) {
-                this.logger.error(`Error while copying ${l.url} to blob handler`, error.message);
+                this.logger.error(`Error while copying ${src} to blob handler`, error.message);
               }
             }
           });
@@ -112,17 +75,6 @@ class HelixImporter {
         await this.storageHandler.put(p, contents);
         this.logger.info(`MD file created: ${p}`);
       });
-  }
-
-  async createMarkdownFileFromResource(directory, resource, content, customName) {
-    const name = customName || path.parse(resource.filename).name;
-    await this.createMarkdownFile(
-      directory,
-      path.parse(resource.filename).name,
-      name,
-      content,
-      resource.children,
-    );
   }
 }
 
