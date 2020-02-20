@@ -153,8 +153,7 @@ async function doImport(importer, url, logger) {
   const nodes = await handleAuthor(importer, $, logger);
   let previous = $heroHr;
   nodes.forEach((n) => {
-    n.insertAfter(previous);
-    previous = n;
+    previous = n.insertAfter(previous);
   });
 
   const topics = await handleTopics(importer, $, logger);
