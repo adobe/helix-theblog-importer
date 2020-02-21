@@ -14,7 +14,7 @@ const unified = require('unified');
 const parse = require('rehype-parse');
 const rehype2remark = require('rehype-remark');
 const stringify = require('remark-stringify');
-const axios = require('axios');
+const rp = require('request-promise-native');
 const cheerio = require('cheerio');
 
 const { asyncForEach } = require('./utils');
@@ -28,12 +28,11 @@ class HelixImporter {
 
   async getPageContent(url) {
     this.logger.info(`Get page content for ${url}`);
-    const response = await axios({
-      url,
-      maxRedirects: 0,
+    const html = await rp({
+      uri: url,
+      timeout: 60000,
     });
-
-    return response.data;
+    return html;
   }
 
   async createMarkdownFile(directory, name, content) {

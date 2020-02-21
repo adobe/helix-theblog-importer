@@ -43,7 +43,6 @@
     "@adobe/helix-status": "7.1.1",
     "@adobe/openwhisk-action-logger": "^2.1.0",
     "@adobe/openwhisk-action-utils": "^4.1.0",
-    "axios": "^0.19.2",
     "cheerio": "^1.0.0-rc.3",
     "dotenv": "^8.2.0",
     "path": "^0.12.7",
