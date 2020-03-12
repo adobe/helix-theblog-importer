@@ -11,7 +11,7 @@
  */
 
 const fastly = require('@adobe/fastly-native-promises');
-const URL = require('url');
+const { URL } = require('url');
 
 class FastlyHandler {
   constructor({ logger, fastlyServiceId, fastlyToken } = {}) {
@@ -22,7 +22,7 @@ class FastlyHandler {
   async addDictEntry(sourceurl, year) {
     const path = new URL(sourceurl).pathname.replace(/\/$/, '');
 
-    return this.service.writeDictItem(1, 'redirects', path, year);
+    return this.service.writeDictItem(undefined, 'redirects', path, year);
   }
 }
 
