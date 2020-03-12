@@ -22,6 +22,7 @@ const { asyncForEach } = require('./generic/utils');
 
 const OneDriveHandler = require('./handlers/OneDriveHandler');
 const ExcelHandler = require('./handlers/ExcelHandler');
+const FastlyHandler = require('./handlers/FastlyHandler');
 
 const OUTPUT_PATH = 'en';
 
@@ -210,6 +211,8 @@ async function main(params = {}) {
     AZURE_ONEDRIVE_REFRESH_TOKEN: oneDriveRefreshToken,
     AZURE_ONEDRIVE_CONTENT_LINK: oneDriveContentLink,
     AZURE_ONEDRIVE_ADMIN_LINK: oneDriveAdminLink,
+    FASTLY_TOKEN,
+    FASTLY_SERVICE_ID,
   } = params;
 
   if (!url) {
@@ -284,6 +287,17 @@ async function main(params = {}) {
       URLS_XLSX_TABLE,
       [[year, url, new Date().toISOString()]],
     );
+
+    if (FASTLY_SERVICE_ID && FASTLY_TOKEN) {
+      const fastly = new FastlyHandler({
+        fastlyServiceId: FASTLY_SERVICE_ID,
+        fastlyToken: FASTLY_TOKEN,
+      });
+
+      await fastly.addDictEntry(url, year);
+    } else {
+      logger.warn('Unable to create redirect, check FASTLY_SERVICE_ID and FASTLY_TOKEN');
+    }
 
 
     logger.info('Process done!');

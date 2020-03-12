@@ -9,6 +9,13 @@ Helix TheBlog importer action:
 - upload to OneDrive
 - update the urls list
 
+## Options
+
+- `FASTLY_SERVICE_ID`: Service ID for "theblog"
+- `FASTLY_TOKEN`: a Fastly API Token
+
+If you don't provide `FASTLY_SERVICE_ID` and `FASTLY_TOKEN`, then no redirects will be created for imported blog posts.
+
 ## Status
 [![codecov](https://img.shields.io/codecov/c/github/adobe/helix-service.svg)](https://codecov.io/gh/adobe/helix-service)
 [![CircleCI](https://img.shields.io/circleci/project/github/adobe/helix-service.svg)](https://circleci.com/gh/adobe/helix-service)

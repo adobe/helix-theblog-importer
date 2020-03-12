@@ -32,7 +32,9 @@ describe('Index Tests', () => {
       AZURE_ONEDRIVE_REFRESH_TOKEN: process.env.AZURE_ONEDRIVE_REFRESH_TOKEN,
       AZURE_ONEDRIVE_CONTENT_LINK: process.env.AZURE_ONEDRIVE_CONTENT_LINK,
       AZURE_ONEDRIVE_ADMIN_LINK: process.env.AZURE_ONEDRIVE_ADMIN_LINK,
+      FASTLY_TOKEN: process.env.FASTLY_TOKEN,
+      FASTLY_SERVICE_ID: process.env.FASTLY_SERVICE_ID,
     });
     assert.deepEqual(result, { body: `Successfully imported ${url}` });
-  });
+  }).timeout(60000);
 });
