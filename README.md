@@ -1,8 +1,8 @@
 # Helix Service
 
-Helix TheBlog importer action:
+Helix TheBlog importer downloads the content associated to the provided url (blog post entry) and creates a markdown version stored in OneDrive.
 
-- if url is not part of the urls list
+- if url is not part of the urls list - OneDrive XLSX file (/importer/urls.xlsx)
 - download url content
 - parse the dom, remove undesired blocks, extracts author, post, products and topics
 - transform to various snippets into markdown
@@ -26,13 +26,51 @@ If you don't provide `FASTLY_SERVICE_ID` and `FASTLY_TOKEN`, then no redirects w
 
 ## Installation
 
-## Usage
+## Setup
 
-```bash
-curl https://adobeioruntime.net/api/v1/web/helix/helix-services/service@v1
+### Installation
+
+Deploy the action:
+
+```
+npm run deploy
 ```
 
-For more, see the [API documentation](docs/API.md).
+### Required env variables:
+
+Connection to OneDrive:
+
+- `AZURE_ONEDRIVE_CLIENT_ID`
+- `AZURE_ONEDRIVE_CLIENT_SECRET`
+- `AZURE_ONEDRIVE_REFRESH_TOKEN`
+
+Blob storage credentials (store images):
+
+- AZURE_BLOB_URI
+- AZURE_BLOB_SAS
+
+OneDrive shared folder that contains the `/importer/urls.xlsx` file:
+
+- `AZURE_ONEDRIVE_ADMIN_LINK`
+
+OneDrive shared folder: destination of the markdown file:
+
+- `AZURE_ONEDRIVE_CONTENT_LINK`
+
+Openwhish credentials to invoke the helix-theblog-importer action:
+
+- `OPENWHISK_API_KEY`
+- `OPENWHISK_API_HOST`
+
+Coralogix credentials to log: 
+
+- `CORALOGIX_API_KEY`
+- `CORALOGIX_LOG_LEVEL`
+
+Fastly credentials to store keys in dictionary (url shortcuts mapping):
+
+- `FASTLY_SERVICE_ID`
+- `FASTLY_TOKEN`
 
 ## Development
 
