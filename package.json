@@ -1,5 +1,5 @@
 {
-  "name": "@kptdobe/helix-theblog-importer",
+  "name": "@adobe/helix-theblog-importer",
   "version": "1.7.0",
   "private": true,
   "description": "Helix - TheBlog - Importer",
@@ -18,8 +18,8 @@
     "deploy-ci": "wsk-builder --web-export false -v --deploy --pkgVersion=ci$CIRCLE_BUILD_NUM -l ci -t 3600000"
   },
   "wsk": {
-    "name": "helix-services-private/helix-theblog-importer@${version}",
-    "linksPackage": "helix-services",
+    "name": "helix-theblog/helix-theblog-importer@${version}",
+    "linksPackage": "helix-theblog",
     "params": {
       "LOG_LEVEL": "debug"
     },
@@ -29,14 +29,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/kptdobe/helix-theblog-importer"
+    "url": "https://github.com/adobe/helix-theblog-importer"
   },
   "author": "",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/kptdobe/helix-theblog-importer/issues"
+    "url": "https://github.com/adobe/helix-theblog-importer/issues"
   },
-  "homepage": "https://github.com/kptdobe/helix-theblog-importer#readme",
+  "homepage": "https://github.com/adobe/helix-theblog-importer#readme",
   "dependencies": {
     "@adobe/fastly-native-promises": "^1.15.0",
     "@adobe/helix-epsagon": "^1.1.3",
