@@ -1,3 +1,15 @@
+# 1.0.0 (2020-03-19)
+
+
+### Bug Fixes
+
+* **fastly:** import correct module, use correct version for dict updates ([4b105e1](https://github.com/adobe/helix-theblog-importer/commit/4b105e146a4b0fc5e5d3afbd02bf2850b6739fd1))
+
+
+### Features
+
+* **importer:** add fastly handler to update redirects dictionary ([7c1d450](https://github.com/adobe/helix-theblog-importer/commit/7c1d450b38929f9f6c7915ec78d2b26b2559e961))
+
 ## [1.6.6](https://github.com/adobe/helix-service/compare/v1.6.5...v1.6.6) (2020-01-27)
 
 
