@@ -16,7 +16,7 @@ const assert = require('assert');
 describe('Post-Deploy Tests', () => {
   it('Service is ready for monitoring', () => {
     assert.equal(
-      'Not yet, but I will change this line as soon as I am ready',
+      'I am ready to go on call for this',
       'I am ready to go on call for this',
     );
   });
