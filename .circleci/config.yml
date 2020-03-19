@@ -65,7 +65,7 @@ jobs:
           command: npm run test-postdeploy
       - store_test_results:
           path: junit
-      # the env is temp fix, CircleCI does not want to update the WSK_AUTH env variable!
+      # the env is to override the WSK_AUTH env variable provided by the Project Helix context
       - run:
           name: Link Sequences
           command: env WSK_AUTH=$OPENWHISK_API_KEY npm run deploy-sequences
