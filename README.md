@@ -9,6 +9,8 @@ Helix TheBlog importer downloads the content associated to the provided url (blo
 - upload to OneDrive
 - update the urls list
 
+The importer cannot be called directly but is invoked by the [scanner](https://github.com/adobe/helix-theblog-scanner).
+
 ## Options
 
 - `FASTLY_SERVICE_ID`: Service ID for "theblog"
