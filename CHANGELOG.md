@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/adobe/helix-theblog-importer/compare/v1.0.1...v1.0.2) (2020-04-01)
+
+
+### Bug Fixes
+
+* **ci:** fix release ([c0f5862](https://github.com/adobe/helix-theblog-importer/commit/c0f5862c597c30aec5d47737d0f7f439728e9db9))
+
 ## [1.0.1](https://github.com/adobe/helix-theblog-importer/compare/v1.0.0...v1.0.1) (2020-04-01)
 
 
