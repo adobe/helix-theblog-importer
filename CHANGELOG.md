@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/adobe/helix-theblog-importer/compare/v1.0.2...v1.0.3) (2020-04-01)
+
+
+### Bug Fixes
+
+* **post:** remove comment section ([2b5f293](https://github.com/adobe/helix-theblog-importer/commit/2b5f293018541134e1cbc57060413ab48a65e578))
+
 ## [1.0.2](https://github.com/adobe/helix-theblog-importer/compare/v1.0.1...v1.0.2) (2020-04-01)
 
 
