@@ -59,7 +59,7 @@ jobs:
       - helix-post-deploy/config-env
       - run:
           name: Semantic Release
-          command: npm run semantic-release
+          command: env WSK_AUTH=$OPENWHISK_API_KEY npm run semantic-release
       - run:
           name: Post-Deployment Integration Test
           command: npm run test-postdeploy
