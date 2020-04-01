@@ -1,3 +1,12 @@
+## [1.0.1](https://github.com/adobe/helix-theblog-importer/compare/v1.0.0...v1.0.1) (2020-04-01)
+
+
+### Bug Fixes
+
+* **ci:** fix deploy branch ([f2c68ae](https://github.com/adobe/helix-theblog-importer/commit/f2c68ae637421064064cb38d35bffaf2ed0e5923))
+* **fastly:** use bulkupdate to solve key encoding issue ([95da676](https://github.com/adobe/helix-theblog-importer/commit/95da676a049749a56b20f61387cf8de6d4228a1b))
+* **fastly:** use bulkupdate to solve key encoding issue ([ff01ae7](https://github.com/adobe/helix-theblog-importer/commit/ff01ae7a7baf8cbc06e921b0b6a72ee849d470c5))
+
 # 1.0.0 (2020-03-19)
 
 

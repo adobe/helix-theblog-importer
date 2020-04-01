@@ -22,7 +22,7 @@ class FastlyHandler {
   async addDictEntry(sourceurl, year) {
     const path = new URL(sourceurl).pathname.replace(/\/$/, '');
 
-    return this.service.writeDictItem(undefined, 'redirects', path, year);
+    return this.service.bulkUpdateDictItems(undefined, 'redirects', { item_key: path, item_value: year, op: 'upsert' });
   }
 }
 
