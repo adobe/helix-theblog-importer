@@ -186,6 +186,9 @@ async function doImport(importer, url, logger) {
   $('#article-nav-wrap').remove();
   // remove 'products in article'
   $('.article-body-products').remove();
+  // remove comments section
+  $('.comments').remove();
+
 
   const content = $main.html();
 
