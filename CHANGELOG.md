@@ -1,3 +1,10 @@
+## [1.0.4](https://github.com/adobe/helix-theblog-importer/compare/v1.0.3...v1.0.4) (2020-04-06)
+
+
+### Bug Fixes
+
+* **ci:** add missing env ([1fcf1d9](https://github.com/adobe/helix-theblog-importer/commit/1fcf1d9ad3ae2dd73f0a76618e8633aea64b4945))
+
 ## [1.0.3](https://github.com/adobe/helix-theblog-importer/compare/v1.0.2...v1.0.3) (2020-04-01)
 
 
