@@ -22,7 +22,10 @@
     "linksPackage": "helix-theblog",
     "params": {
       "LOG_LEVEL": "debug"
-    }
+    },
+    "params-file": [
+      ".env"
+    ]
   },
   "repository": {
     "type": "git",
