@@ -14,6 +14,7 @@ const { logger: oLogger } = require('@adobe/openwhisk-action-logger');
 const { wrap: status } = require('@adobe/helix-status');
 const { epsagon } = require('@adobe/helix-epsagon');
 const cheerio = require('cheerio');
+const moment = require('moment');
 const path = require('path');
 
 const HelixImporter = require('./generic/HelixImporter');
@@ -129,11 +130,12 @@ async function doImport(importer, url, logger) {
 
   const $ = cheerio.load(html);
 
-  let year = new Date().getFullYear();
+  let date = 'unknown';
   // extract year from article:published_time metadata
   const pubDate = $('[property="article:published_time"]').attr('content');
   if (pubDate) {
-    year = new Date(pubDate).getFullYear();
+    const d = moment(pubDate);
+    date = d.format('YYYY/MM/DD');
   }
 
   const $main = $('.main-content');
@@ -192,9 +194,9 @@ async function doImport(importer, url, logger) {
 
   const content = $main.html();
 
-  await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_POST}/${year}`, path.parse(url).name, content);
+  await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_POST}/${date}`, path.parse(url).name, content);
 
-  return year;
+  return date;
 }
 
 /**
@@ -282,13 +284,13 @@ async function main(params = {}) {
       logger,
     });
 
-    const year = await doImport(importer, url, logger);
+    const date = await doImport(importer, url, logger);
 
     await excelHandler.addRow(
       URLS_XLSX,
       URLS_XLSX_WORKSHEET,
       URLS_XLSX_TABLE,
-      [[year, url, new Date().toISOString()]],
+      [[date, url, new Date().toISOString()]],
     );
 
     if (FASTLY_SERVICE_ID && FASTLY_TOKEN) {
@@ -297,7 +299,7 @@ async function main(params = {}) {
         fastlyToken: FASTLY_TOKEN,
       });
 
-      await fastly.addDictEntry(url, year);
+      await fastly.addDictEntry(url, date);
     } else {
       logger.warn('Unable to create redirect, check FASTLY_SERVICE_ID and FASTLY_TOKEN');
     }
