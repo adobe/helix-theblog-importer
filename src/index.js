@@ -35,7 +35,7 @@ const URLS_XLSX = '/importer/urls.xlsx';
 const URLS_XLSX_WORKSHEET = 'urls';
 const URLS_XLSX_TABLE = 'listOfURLS';
 
-async function handleAuthor(importer, $) {
+async function handleAuthor(importer, $, checkIfExists) {
   let postedBy = $('.author-link').text();
   postedBy = postedBy.split(',')[0].trim();
   const authorLink = $('.author-link').attr('href');
@@ -47,7 +47,7 @@ async function handleAuthor(importer, $) {
 
   const authorFilename = postedBy.toLowerCase().trim().replace(/\s/g, '-');
 
-  if (!await importer.exists(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, authorFilename)) {
+  if (!checkIfExists || !await importer.exists(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, authorFilename)) {
     const html = await importer.getPageContent(authorLink);
     const $2 = cheerio.load(html);
 
@@ -67,7 +67,7 @@ async function handleAuthor(importer, $) {
   return nodes;
 }
 
-async function handleTopics(importer, $, logger) {
+async function handleTopics(importer, $, checkIfExists, logger) {
   let topics = '';
   $('.article-footer-topics-wrap .text').each((i, t) => {
     topics += `${$(t).html()}, `;
@@ -81,7 +81,7 @@ async function handleTopics(importer, $, logger) {
       .map((t) => t.trim()),
     async (t) => {
       const topicName = `${t.replace(/\s/gm, '-').replace(/&amp;/gm, '').toLowerCase()}`;
-      if (!await importer.exists(`${OUTPUT_PATH}/${TYPE_TOPIC}`, topicName)) {
+      if (!checkIfExists || !await importer.exists(`${OUTPUT_PATH}/${TYPE_TOPIC}`, topicName)) {
         logger.info(`Found a new topic: ${topicName}`);
         await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_TOPIC}`, topicName, `<h1>${t}</h1>`);
       }
@@ -91,7 +91,7 @@ async function handleTopics(importer, $, logger) {
   return topics;
 }
 
-async function handleProducts(importer, $, logger) {
+async function handleProducts(importer, $, checkIfExists, logger) {
   let output = '';
   const products = [];
   $('.sidebar-products-row .product-team-link').each((i, p) => {
@@ -122,7 +122,7 @@ async function handleProducts(importer, $, logger) {
   await asyncForEach(
     products,
     async (p) => {
-      if (!await importer.exists(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, p.fileName)) {
+      if (!checkIfExists || !await importer.exists(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, p.fileName)) {
         logger.info(`Found a new product: ${p.name}`);
         await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, `${p.fileName}`, `<h1>${p.name}</h1><a href='${p.href}'><img src='${p.imgSrc}'></a>`);
       }
@@ -132,7 +132,7 @@ async function handleProducts(importer, $, logger) {
   return output;
 }
 
-async function doImport(importer, url, logger) {
+async function doImport(importer, url, checkIfRelatedExists, logger) {
   const html = await importer.getPageContent(url);
 
   const $ = cheerio.load(html);
@@ -159,14 +159,14 @@ async function doImport(importer, url, logger) {
   const $heroHr = $('<hr>').insertAfter($('.article-hero'));
 
   $('<hr>').insertAfter($heroHr);
-  const nodes = await handleAuthor(importer, $, logger);
+  const nodes = await handleAuthor(importer, $, checkIfRelatedExists, logger);
   let previous = $heroHr;
   nodes.forEach((n) => {
     previous = n.insertAfter(previous);
   });
 
-  const topics = await handleTopics(importer, $, logger);
-  const products = await handleProducts(importer, $, logger);
+  const topics = await handleTopics(importer, $, checkIfRelatedExists, logger);
+  const products = await handleProducts(importer, $, checkIfRelatedExists, logger);
 
   const $topicsWrap = $('<p>');
   $topicsWrap.html(`Topics: ${topics}`);
@@ -215,6 +215,7 @@ async function main(params = {}) {
   const {
     url,
     force,
+    checkIfRelatedExists,
     __ow_logger: logger,
     AZURE_BLOB_SAS: azureBlobSAS,
     AZURE_BLOB_URI: azureBlobURI,
@@ -291,7 +292,7 @@ async function main(params = {}) {
       logger,
     });
 
-    const year = await doImport(importer, url, logger);
+    const year = await doImport(importer, url, checkIfRelatedExists, logger);
 
     await excelHandler.addRow(
       URLS_XLSX,
