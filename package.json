@@ -46,7 +46,6 @@
     "@adobe/openwhisk-action-utils": "^4.1.0",
     "cheerio": "^1.0.0-rc.3",
     "dotenv": "^8.2.0",
-    "moment": "^2.24.0",
     "path": "^0.12.7",
     "rehype-parse": "^6.0.2",
     "rehype-remark": "^7.0.0",
