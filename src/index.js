@@ -211,6 +211,7 @@ async function doImport(importer, url, logger) {
  * @returns {object} a greeting
  */
 async function main(params = {}) {
+  const startTime = new Date().getTime();
   const {
     url,
     force,
@@ -311,7 +312,7 @@ async function main(params = {}) {
     }
 
 
-    logger.info('Process done!');
+    logger.info(`Process done in ${(new Date().getTime() - startTime) / 1000}s.`);
     return Promise.resolve({
       body: `Successfully imported ${url}`,
     });
