@@ -47,20 +47,23 @@ async function handleAuthor(importer, $) {
   nodes.push($('<p>').append(postedOn));
 
   const authorFilename = postedBy.toLowerCase().trim().replace(/\s/g, '-');
-  const html = await importer.getPageContent(authorLink);
-  const $2 = cheerio.load(html);
 
-  const $main = $2('.author-header');
+  if (!await importer.exists(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, authorFilename)) {
+    const html = await importer.getPageContent(authorLink);
+    const $2 = cheerio.load(html);
 
-  // convert author-img from div to img for auto-processing
-  const $div = $2('.author-header .author-img');
-  const urlstr = $div.css('background-image');
-  const url = /\(([^)]+)\)/.exec(urlstr)[1];
-  $main.prepend(`<img src="${url}">`);
-  $div.remove();
+    const $main = $2('.author-header');
 
-  const content = $main.html();
-  await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, authorFilename, content);
+    // convert author-img from div to img for auto-processing
+    const $div = $2('.author-header .author-img');
+    const urlstr = $div.css('background-image');
+    const url = /\(([^)]+)\)/.exec(urlstr)[1];
+    $main.prepend(`<img src="${url}">`);
+    $div.remove();
+
+    const content = $main.html();
+    await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, authorFilename, content);
+  }
 
   return nodes;
 }
@@ -78,8 +81,11 @@ async function handleTopics(importer, $, logger) {
       .filter((t) => t && t.length > 0)
       .map((t) => t.trim()),
     async (t) => {
-      logger.info(`Found a new topic: ${t}`);
-      await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_TOPIC}`, `${t.replace(/\s/gm, '-').replace(/&amp;/gm, '').toLowerCase()}`, `<h1>${t}</h1>`);
+      const topicName = `${t.replace(/\s/gm, '-').replace(/&amp;/gm, '').toLowerCase()}`;
+      if (!await importer.exists(`${OUTPUT_PATH}/${TYPE_TOPIC}`, topicName)) {
+        logger.info(`Found a new topic: ${topicName}`);
+        await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_TOPIC}`, topicName, `<h1>${t}</h1>`);
+      }
     },
   );
 
@@ -117,8 +123,10 @@ async function handleProducts(importer, $, logger) {
   await asyncForEach(
     products,
     async (p) => {
-      logger.info(`Found a new product: ${p.name}`);
-      await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, `${p.fileName}`, `<h1>${p.name}</h1><a href='${p.href}'><img src='${p.imgSrc}'></a>`);
+      if (!await importer.exists(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, p.fileName)) {
+        logger.info(`Found a new product: ${p.name}`);
+        await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, `${p.fileName}`, `<h1>${p.name}</h1><a href='${p.href}'><img src='${p.imgSrc}'></a>`);
+      }
     },
   );
 
