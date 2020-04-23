@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/adobe/helix-theblog-importer/compare/v1.0.4...v1.1.0) (2020-04-23)
+
+
+### Features
+
+* **import:** no override for products, topics and authors ([5bf0309](https://github.com/adobe/helix-theblog-importer/commit/5bf03096da4ae9dcff291215be6797ef3b254c63))
+
 ## [1.0.4](https://github.com/adobe/helix-theblog-importer/compare/v1.0.3...v1.0.4) (2020-04-06)
 
 
