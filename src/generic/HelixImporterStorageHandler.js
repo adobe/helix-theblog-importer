@@ -16,6 +16,8 @@ class HelixImporterStorageHandler {
   put() {}
 
   get() {}
+
+  exists() {}
 }
 
 module.exports = HelixImporterStorageHandler;
