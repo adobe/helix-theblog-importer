@@ -75,6 +75,12 @@ class HelixImporter {
         this.logger.info(`MD file created: ${p}`);
       });
   }
+
+  async exists(directory, name) {
+    this.logger.info(`Checking if MD file exists: ${directory}/${name}.md`);
+    const p = `${directory}/${name}.md`;
+    return this.storageHandler.exists(p);
+  }
 }
 
 module.exports = HelixImporter;
