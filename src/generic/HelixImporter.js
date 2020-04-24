@@ -31,6 +31,7 @@ class HelixImporter {
     const html = await rp({
       uri: url,
       timeout: 60000,
+      followRedirect: false,
     });
     return html;
   }
@@ -61,13 +62,9 @@ class HelixImporter {
           // copy resources (imgs...) to blob handler (azure)
           await asyncForEach(imgs, async (img) => {
             const src = $(img).attr('src');
-            if (file.contents.indexOf(src) !== -1) {
-              try {
-                const externalURL = await this.blobHandler.copyFromURL(src);
-                contents = contents.replace(new RegExp(`${src.replace('.', '\\.')}`, 'g'), externalURL);
-              } catch (error) {
-                this.logger.error(`Error while copying ${src} to blob handler`, error.message);
-              }
+            if (src !== '' && file.contents.indexOf(src) !== -1) {
+              const externalURL = await this.blobHandler.copyFromURL(encodeURI(src));
+              contents = contents.replace(new RegExp(`${src.replace('.', '\\.')}`, 'g'), externalURL);
             }
           });
         }

@@ -22,13 +22,14 @@ const BlogHandler = require('./generic/BlogHandler');
 const { asyncForEach } = require('./generic/utils');
 
 const OneDriveHandler = require('./handlers/OneDriveHandler');
+const FSHandler = require('./handlers/FSHandler');
 const ExcelHandler = require('./handlers/ExcelHandler');
 const FastlyHandler = require('./handlers/FastlyHandler');
 
 const OUTPUT_PATH = 'en';
 
 const TYPE_AUTHOR = 'authors';
-const TYPE_POST = 'archive';
+const TYPE_POST = 'drafts/migrated';
 const TYPE_TOPIC = 'topics';
 const TYPE_PRODUCT = 'products';
 
@@ -50,19 +51,22 @@ async function handleAuthor(importer, $, checkIfExists) {
 
   if (!checkIfExists || !await importer.exists(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, authorFilename)) {
     const html = await importer.getPageContent(authorLink);
-    const $2 = cheerio.load(html);
 
-    const $main = $2('.author-header');
+    if (html && html !== '') {
+      const $2 = cheerio.load(html);
 
-    // convert author-img from div to img for auto-processing
-    const $div = $2('.author-header .author-img');
-    const urlstr = $div.css('background-image');
-    const url = /\(([^)]+)\)/.exec(urlstr)[1];
-    $main.prepend(`<img src="${url}">`);
-    $div.remove();
+      const $main = $2('.author-header');
 
-    const content = $main.html();
-    await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, authorFilename, content);
+      // convert author-img from div to img for auto-processing
+      const $div = $2('.author-header .author-img');
+      const urlstr = $div.css('background-image');
+      const url = /\(([^)]+)\)/.exec(urlstr)[1];
+      $main.prepend(`<img src="${url}">`);
+      $div.remove();
+
+      const content = $main.html();
+      await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, authorFilename, content);
+    }
   }
 
   return nodes;
@@ -136,75 +140,78 @@ async function handleProducts(importer, $, checkIfExists, logger) {
 async function doImport(importer, url, checkIfRelatedExists, logger) {
   const html = await importer.getPageContent(url);
 
-  const $ = cheerio.load(html);
+  if (html && html !== '') {
+    const $ = cheerio.load(html);
 
-  let date = 'unknown';
-  // extract year from article:published_time metadata
-  const pubDate = $('[property="article:published_time"]').attr('content');
-  if (pubDate) {
-    const d = moment(pubDate);
-    date = d.format('YYYY/MM/DD');
+    let date = 'unknown';
+    // extract year from article:published_time metadata
+    const pubDate = $('[property="article:published_time"]').attr('content');
+    if (pubDate) {
+      const d = moment(pubDate);
+      date = d.format('YYYY/MM/DD');
+    }
+
+    const $main = $('.main-content');
+
+    // remove all existing hr to avoid section collisions
+    $main.find('hr').remove();
+
+    // remove all hidden elements
+    $main.find('.hidden-md-down, .hidden-xs-down').remove();
+
+    // add a thematic break after first titles
+    $('<hr>').insertAfter($('.article-header'));
+
+    // add a thematic break after hero banner
+    const $heroHr = $('<hr>').insertAfter($('.article-hero'));
+
+    $('<hr>').insertAfter($heroHr);
+    const nodes = await handleAuthor(importer, $, checkIfRelatedExists, logger);
+    let previous = $heroHr;
+    nodes.forEach((n) => {
+      previous = n.insertAfter(previous);
+    });
+
+    const topics = await handleTopics(importer, $, checkIfRelatedExists, logger);
+    const products = await handleProducts(importer, $, checkIfRelatedExists, logger);
+
+    const $topicsWrap = $('<p>');
+    $topicsWrap.html(`Topics: ${topics}`);
+    const $productsWrap = $('<p>');
+    $productsWrap.html(`Products: ${products}`);
+
+    $main.append($topicsWrap);
+    $main.append($productsWrap);
+    $('<hr>').insertBefore($topicsWrap);
+
+    const headers = $('.article-header');
+    if (headers.length === 0) {
+      // posts with headers after image
+      const $articleRow = $('.article-title-row');
+      $('.article-content').prepend($articleRow);
+      $('<hr>').insertAfter($articleRow);
+    }
+    $('.article-collection-header').remove();
+
+    // remove author / products section
+    $('.article-author-wrap').remove();
+    // remove footer
+    $('.article-footer').remove();
+    // remove nav
+    $('#article-nav-wrap').remove();
+    // remove 'products in article'
+    $('.article-body-products').remove();
+    // remove comments section
+    $('.comments').remove();
+
+
+    const content = $main.html();
+
+    await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_POST}/${date}`, path.parse(url).name, content);
+
+    return date;
   }
-
-  const $main = $('.main-content');
-
-  // remove all existing hr to avoid section collisions
-  $main.find('hr').remove();
-
-  // remove all hidden elements
-  $main.find('.hidden-md-down, .hidden-xs-down').remove();
-
-  // add a thematic break after first titles
-  $('<hr>').insertAfter($('.article-header'));
-
-  // add a thematic break after hero banner
-  const $heroHr = $('<hr>').insertAfter($('.article-hero'));
-
-  $('<hr>').insertAfter($heroHr);
-  const nodes = await handleAuthor(importer, $, checkIfRelatedExists, logger);
-  let previous = $heroHr;
-  nodes.forEach((n) => {
-    previous = n.insertAfter(previous);
-  });
-
-  const topics = await handleTopics(importer, $, checkIfRelatedExists, logger);
-  const products = await handleProducts(importer, $, checkIfRelatedExists, logger);
-
-  const $topicsWrap = $('<p>');
-  $topicsWrap.html(`Topics: ${topics}`);
-  const $productsWrap = $('<p>');
-  $productsWrap.html(`Products: ${products}`);
-
-  $main.append($topicsWrap);
-  $main.append($productsWrap);
-  $('<hr>').insertBefore($topicsWrap);
-
-  const headers = $('.article-header');
-  if (headers.length === 0) {
-    // posts with headers after image
-    const $articleRow = $('.article-title-row');
-    $('.article-content').prepend($articleRow);
-    $('<hr>').insertAfter($articleRow);
-  }
-  $('.article-collection-header').remove();
-
-  // remove author / products section
-  $('.article-author-wrap').remove();
-  // remove footer
-  $('.article-footer').remove();
-  // remove nav
-  $('#article-nav-wrap').remove();
-  // remove 'products in article'
-  $('.article-body-products').remove();
-  // remove comments section
-  $('.comments').remove();
-
-
-  const content = $main.html();
-
-  await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_POST}/${date}`, path.parse(url).name, content);
-
-  return date;
+  return 'N/A';
 }
 
 /**
@@ -228,6 +235,7 @@ async function main(params = {}) {
     AZURE_ONEDRIVE_ADMIN_LINK: oneDriveAdminLink,
     FASTLY_TOKEN,
     FASTLY_SERVICE_ID,
+    localStorage,
   } = params;
 
   if (!url) {
@@ -243,14 +251,22 @@ async function main(params = {}) {
     let excelHandler;
 
     if (oneDriveClientId && oneDriveClientSecret) {
-      logger.info('OneDrive credentials provided - using OneDrive handler');
-      handler = new OneDriveHandler({
-        logger,
-        clientId: oneDriveClientId,
-        clientSecret: oneDriveClientSecret,
-        refreshToken: oneDriveRefreshToken,
-        sharedLink: oneDriveContentLink,
-      });
+      if (!localStorage) {
+        logger.info('OneDrive credentials provided - using OneDrive handler');
+        handler = new OneDriveHandler({
+          logger,
+          clientId: oneDriveClientId,
+          clientSecret: oneDriveClientSecret,
+          refreshToken: oneDriveRefreshToken,
+          sharedLink: oneDriveContentLink,
+        });
+      } else {
+        logger.info('localStorage provided - using FShandler');
+        handler = new FSHandler({
+          logger,
+          target: localStorage,
+        });
+      }
 
       excelHandler = new ExcelHandler({
         logger,
@@ -266,23 +282,25 @@ async function main(params = {}) {
 
     logger.info(`Received url ${url}`);
 
-    // check if url has already been processed
-    const rows = await excelHandler.getRows(URLS_XLSX, URLS_XLSX_WORKSHEET, URLS_XLSX_TABLE);
+    if (!force) {
+      // check if url has already been processed
+      const rows = await excelHandler.getRows(URLS_XLSX, URLS_XLSX_WORKSHEET, URLS_XLSX_TABLE);
 
-    // rows.value[n].values[0][0] -> year
-    // rows.value[n].values[0][1] -> url
-    // rows.value[n].values[0][2] -> import date
-    const index = rows && rows.value
-      ? rows.value.findIndex(
-        (r) => (r.values.length > 0 && r.values[0].length > 1 ? r.values[0][1] === url : false),
-      )
-      : -1;
-    const rec = index > -1 ? rows.value[index] : null;
-    if (!force && rec && rec.values[0][2]) {
-      // url has already been imported
-      return Promise.resolve({
-        body: `${url} has already been imported.`,
-      });
+      // rows.value[n].values[0][0] -> year
+      // rows.value[n].values[0][1] -> url
+      // rows.value[n].values[0][2] -> import date
+      const index = rows && rows.value
+        ? rows.value.findIndex(
+          (r) => (r.values.length > 0 && r.values[0].length > 1 ? r.values[0][1] === url : false),
+        )
+        : -1;
+      const rec = index > -1 ? rows.value[index] : null;
+      if (rec && rec.values[0][2]) {
+        // url has already been imported
+        return Promise.resolve({
+          body: `${url} has already been imported.`,
+        });
+      }
     }
 
     const importer = new HelixImporter({
@@ -318,10 +336,11 @@ async function main(params = {}) {
     logger.info(`Process done in ${(new Date().getTime() - startTime) / 1000}s.`);
     return Promise.resolve({
       body: `Successfully imported ${url}`,
+      statusCode: 200,
     });
   } catch (error) {
     logger.error(error.message);
-    throw error;
+    return Promise.reject(new Error(`Error for ${url} import: ${error.stack}`));
   }
 }
 

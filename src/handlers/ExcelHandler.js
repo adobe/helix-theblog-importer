@@ -32,24 +32,32 @@ class ExcelHandler {
     return rows;
   }
 
-  async addRow(filePath, worksheet, table, values) {
+  async addRow(filePath, worksheet, table, values, maxRetry = 5) {
     this.logger.debug(`Adding row to file: ${filePath}`);
-    const rootItem = await this.drive.getDriveItemFromShareLink(this.sharedLink);
-    const path = filePath.indexOf('/') === 0 ? filePath : `/${filePath}`;
-    const item = await this.drive.getDriveItem(rootItem, path);
-    const uri = `/drives/${item.parentReference.driveId}/items/${item.id}/workbook/worksheets/${worksheet}/tables/${table}/rows/add`;
-    const client = await this.drive.getClient();
-    const response = await client({
-      uri,
-      method: 'POST',
-      body: {
-        index: null,
-        values,
-      },
-      json: true,
-    });
-    this.logger.debug(response);
-    return response;
+    try {
+      const rootItem = await this.drive.getDriveItemFromShareLink(this.sharedLink);
+      const path = filePath.indexOf('/') === 0 ? filePath : `/${filePath}`;
+      const item = await this.drive.getDriveItem(rootItem, path);
+      const uri = `/drives/${item.parentReference.driveId}/items/${item.id}/workbook/worksheets/${worksheet}/tables/${table}/rows/add`;
+      const client = await this.drive.getClient();
+      const response = await client({
+        uri,
+        method: 'POST',
+        body: {
+          index: null,
+          values,
+        },
+        json: true,
+      });
+      this.logger.debug(response);
+      return response;
+    } catch (error) {
+      if (maxRetry === 0) {
+        throw new Error(`Failed to addRow to ${filePath}`);
+      }
+      // retry
+      return this.addRow(filePath, worksheet, table, values, maxRetry - 1);
+    }
   }
 }
 
