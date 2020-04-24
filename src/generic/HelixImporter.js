@@ -28,12 +28,18 @@ class HelixImporter {
 
   async getPageContent(url) {
     this.logger.info(`Get page content for ${url}`);
-    const html = await rp({
-      uri: url,
-      timeout: 60000,
-      followRedirect: false,
-    });
-    return html;
+
+    try {
+      const html = await rp({
+        uri: url,
+        timeout: 60000,
+        followRedirect: false,
+      });
+      return html;
+    } catch (error) {
+      this.logger.error(`Request error or timeout for ${url}: ${error.message}`);
+      throw new Error(`Cannot get content for ${url}`);
+    }
   }
 
   async createMarkdownFile(directory, name, content) {
@@ -64,7 +70,11 @@ class HelixImporter {
             const src = $(img).attr('src');
             if (src !== '' && file.contents.indexOf(src) !== -1) {
               const externalURL = await this.blobHandler.copyFromURL(encodeURI(src));
-              contents = contents.replace(new RegExp(`${src.replace('.', '\\.')}`, 'g'), externalURL);
+              if (externalURL) {
+                contents = contents.replace(new RegExp(`${src.replace('.', '\\.')}`, 'g'), externalURL);
+              } else {
+                this.logger.warn(`Image could not be copied: ${src}`);
+              }
             }
           });
         }

@@ -189,20 +189,37 @@ class BlobHandler {
     const computeSha = () => new Promise((resolve, reject) => {
       const hasher = crypto.createHash('sha1');
       hasher.setEncoding('hex');
-      request.get(url)
-        .pipe(hasher)
-        .on('finish', () => {
-          const sha1 = hasher.read();
-          this._log.debug(`sha1 computed for ${url}: ${sha1}`);
-          resolve(sha1);
+      try {
+        request.get({
+          url,
+          timeout: 5000,
+        }, (error) => {
+          if (error) {
+            reject(error);
+          }
         })
-        .on('error', (err) => {
-          reject(err);
-        });
+          .pipe(hasher)
+          .on('finish', () => {
+            const sha1 = hasher.read();
+            this._log.debug(`sha1 computed for ${url}: ${sha1}`);
+            resolve(sha1);
+          })
+          .on('error', (err) => {
+            reject(err);
+          });
+      } catch (error) {
+        reject(error);
+      }
     });
 
+    let sha1;
+    try {
+      sha1 = await computeSha();
+    } catch (error) {
+      this._log.warn(`sha cannot be computed for ${url}, probaby because resource does not exist`);
+      return null;
+    }
 
-    const sha1 = await computeSha();
     const uri = `${this._azureBlobURI}/${sha1}`;
     if (!await this.checkBlobExists({ uri })) {
       try {
@@ -211,7 +228,8 @@ class BlobHandler {
           uri: `${uri}${this._azureBlobSAS}`,
           method: 'PUT',
           encoding: null,
-          resolveWithFullResponse: true,
+          // resolveWithFullResponse: true,
+          timeout: 60000,
           headers: {
             'x-ms-date': new Date().toString(),
             'x-ms-blob-type': 'BlockBlob',
@@ -219,7 +237,19 @@ class BlobHandler {
           },
         });
       } catch (error) {
-        this._log.error('Error in x-ms-copy-source request', error.message);
+        let msg = error.message;
+
+        const m = msg.match(/{(.*)}/gm);
+        if (m && m.length > 0) {
+          try {
+            msg = Buffer.from(JSON.parse(m[0]).data).toString();
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        this._log.error(`Error in x-ms-copy-source request: ${url}: ${msg}`);
+        throw new Error(`Error in x-ms-copy-source request: ${url}: ${msg}`);
       }
     } else {
       this._log.info(`Won't copy ${url}: already exists as ${uri}`);
