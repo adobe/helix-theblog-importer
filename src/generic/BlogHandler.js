@@ -275,7 +275,7 @@ class BlobHandler {
             }
             msg = parseErrorMsg(e.message);
             this._log.error(`Cannot copy ${url} - resource might not exist: ${msg}`);
-            //throw new Error(`Cannot copy ${url} - resource might not exist: ${msg}`);
+            // throw new Error(`Cannot copy ${url} - resource might not exist: ${msg}`);
             return null;
           }
         } else {
