@@ -22,7 +22,7 @@ const URLS_XLSX = '/importer/urls.xlsx';
 const URLS_XLSX_WORKSHEET = 'urls';
 const URLS_XLSX_TABLE = 'listOfURLS';
 
-const IMPORT_BATCH_SIZE = 5;
+const IMPORT_BATCH_SIZE = 10;
 
 async function doImport(params, url) {
   try {
@@ -34,7 +34,7 @@ async function doImport(params, url) {
       console.debug(result.body);
       return true;
     } else {
-      console.debug('Error in action: ', result);
+      console.error(`Error in action for ${url}: `, result.body);
       await params._5xxFile.append([{ link: url }]);
       return false;
     }

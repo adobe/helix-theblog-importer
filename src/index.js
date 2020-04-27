@@ -49,7 +49,7 @@ async function handleAuthor(importer, $, checkIfExists) {
 
   const authorFilename = postedBy.toLowerCase().trim().replace(/\s/g, '-');
 
-  if (!checkIfExists || !await importer.exists(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, authorFilename)) {
+  if (authorFilename && authorFilename !== '' && (!checkIfExists || !await importer.exists(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, authorFilename))) {
     const html = await importer.getPageContent(authorLink);
 
     if (html && html !== '') {
@@ -308,6 +308,12 @@ async function main(params = {}) {
       blobHandler: new BlogHandler({
         azureBlobSAS,
         azureBlobURI,
+        log: {
+          debug: () => {},
+          info: () => {},
+          error: (msg) => { logger.error(msg); },
+          warn: (msg) => { logger.warn(msg); },
+        },
       }),
       logger,
     });
@@ -334,13 +340,16 @@ async function main(params = {}) {
 
 
     logger.info(`Process done in ${(new Date().getTime() - startTime) / 1000}s.`);
-    return Promise.resolve({
+    return {
       body: `Successfully imported ${url}`,
       statusCode: 200,
-    });
+    };
   } catch (error) {
     logger.error(error.message);
-    return Promise.reject(new Error(`Error for ${url} import: ${error.stack}`));
+    return {
+      statusCode: 500,
+      body: `Error for ${url} import: ${error.stack}`,
+    };
   }
 }
 

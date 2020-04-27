@@ -237,19 +237,51 @@ class BlobHandler {
           },
         });
       } catch (error) {
-        let msg = error.message;
+        const parseErrorMsg = (errorMessage) => {
+          let msg = errorMessage;
 
-        const m = msg.match(/{(.*)}/gm);
-        if (m && m.length > 0) {
-          try {
-            msg = Buffer.from(JSON.parse(m[0]).data).toString();
-          } catch (e) {
-            // ignore
+          const m = msg.match(/{(.*)}/gm);
+          if (m && m.length > 0) {
+            try {
+              msg = Buffer.from(JSON.parse(m[0]).data).toString();
+            } catch (e) {
+              // ignore
+            }
           }
-        }
+          return msg;
+        };
+        let msg = parseErrorMsg(error.message);
 
-        this._log.error(`Error in x-ms-copy-source request: ${url}: ${msg}`);
-        throw new Error(`Error in x-ms-copy-source request: ${url}: ${msg}`);
+        if (msg && msg.indexOf('HTTP status code 301')) {
+          // x-ms-copy-source API does not support images behind a 301
+          // need to download the asset and upload it manually
+          try {
+            const ret = await rp({
+              url,
+              method: 'GET',
+              encoding: null,
+              resolveWithFullResponse: true,
+            });
+            if (ret.statusCode === 200) {
+              this.upload(this.createExternalResource(ret.body, ret.headers['content-type'], uri));
+            } else {
+              this._log.warn(`${url} might not exist: ${ret.statusCode}`);
+              return null;
+            }
+          } catch (e) {
+            if (e.statusCode === 404) {
+              this._log.warn(`${url} does not exist.`);
+              return null;
+            }
+            msg = parseErrorMsg(e.message);
+            this._log.error(`Cannot copy ${url} - resource might not exist: ${msg}`);
+            //throw new Error(`Cannot copy ${url} - resource might not exist: ${msg}`);
+            return null;
+          }
+        } else {
+          this._log.error(`Error in x-ms-copy-source request: ${url}: ${msg}`);
+          throw new Error(`Error in x-ms-copy-source request: ${url}: ${msg}`);
+        }
       }
     } else {
       this._log.info(`Won't copy ${url}: already exists as ${uri}`);
