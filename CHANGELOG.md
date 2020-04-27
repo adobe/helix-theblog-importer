@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/adobe/helix-theblog-importer/compare/v1.1.0...v1.2.0) (2020-04-27)
+
+
+### Features
+
+* **import:** import to drafts/migrated/yyyy/mm/dd ([68a2ca2](https://github.com/adobe/helix-theblog-importer/commit/68a2ca215693f6cc0aef53bd1e665e5910831fd4))
+
 # [1.1.0](https://github.com/adobe/helix-theblog-importer/compare/v1.0.4...v1.1.0) (2020-04-23)
 
 
