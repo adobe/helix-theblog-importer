@@ -13,9 +13,11 @@ const { wrap } = require('@adobe/openwhisk-action-utils');
 const { logger: oLogger } = require('@adobe/openwhisk-action-logger');
 const { wrap: status } = require('@adobe/helix-status');
 const { epsagon } = require('@adobe/helix-epsagon');
+
 const cheerio = require('cheerio');
 const moment = require('moment');
 const path = require('path');
+const rp = require('request-promise-native');
 
 const HelixImporter = require('./generic/HelixImporter');
 const BlogHandler = require('./generic/BlogHandler');
@@ -36,6 +38,31 @@ const TYPE_PRODUCT = 'products';
 const URLS_XLSX = '/importer/urls.xlsx';
 const URLS_XLSX_WORKSHEET = 'urls';
 const URLS_XLSX_TABLE = 'listOfURLS';
+
+const EMBED_PATTERNS = [{
+  matchReg: /w.soundcloud.com\/player/gm,
+  extract: async (src, logger) => {
+    try {
+      const html = await rp({
+        uri: src,
+        timeout: 60000,
+        simple: false,
+        headers: {
+          // does not give the canonical rel without the UA.
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
+        },
+      });
+      if (html && html !== '') {
+        const $ = cheerio.load(html);
+        return $('link[rel="canonical"]').attr('href') || src;
+      }
+    } catch (error) {
+      logger.warn(`Cannot resolve soundcloud embed ${src}`);
+      return src;
+    }
+    return src;
+  },
+}];
 
 async function handleAuthor(importer, $, checkIfExists) {
   let postedBy = $('.author-link').text();
@@ -204,6 +231,26 @@ async function doImport(importer, url, checkIfRelatedExists, logger) {
     // remove comments section
     $('.comments').remove();
 
+    // embeds
+    await asyncForEach($('.embed-wrapper').toArray(), async (node) => {
+      const $w = $(node);
+      const $f = $w.find('iframe');
+      let src = $f.attr('src');
+
+      await asyncForEach(
+        EMBED_PATTERNS,
+        async (p) => {
+          if (src.match(p.matchReg)) {
+            src = await p.extract(src, logger);
+          }
+          return src;
+        },
+      );
+
+      // replace iframe by "embed" image
+      $w.append(`<img src="${src}" class="hlx-embed">`);
+      $f.remove();
+    });
 
     const content = $main.html();
 
