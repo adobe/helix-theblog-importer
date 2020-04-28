@@ -67,8 +67,10 @@ class HelixImporter {
         if (imgs && imgs.length > 0) {
           // copy resources (imgs...) to blob handler (azure)
           await asyncForEach(imgs, async (img) => {
-            const src = $(img).attr('src');
-            if (src !== '' && file.contents.indexOf(src) !== -1) {
+            const $img = $(img);
+            const src = $img.attr('src');
+            const isEmbed = $img.hasClass('hlx-embed');
+            if (!isEmbed && src !== '' && file.contents.indexOf(src) !== -1) {
               const externalURL = await this.blobHandler.copyFromURL(encodeURI(src));
               if (externalURL) {
                 contents = contents.replace(new RegExp(`${src.replace('.', '\\.')}`, 'g'), externalURL);
