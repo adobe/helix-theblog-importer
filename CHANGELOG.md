@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/adobe/helix-theblog-importer/compare/v1.4.0...v1.4.1) (2020-04-30)
+
+
+### Bug Fixes
+
+* **import:** use posted on date as default ([9efca11](https://github.com/adobe/helix-theblog-importer/commit/9efca113a7c084d26b05acf3b8dbc6d575b2e206))
+
 # [1.4.0](https://github.com/adobe/helix-theblog-importer/compare/v1.3.0...v1.4.0) (2020-04-30)
 
 
