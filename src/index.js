@@ -65,11 +65,10 @@ const EMBED_PATTERNS = [{
   },
 }];
 
-async function handleAuthor(importer, $, checkIfExists) {
+async function handleAuthor(importer, $, postedOn, checkIfExists) {
   let postedBy = $('.author-link').text();
   postedBy = postedBy.split(',')[0].trim();
   const authorLink = $('.author-link').attr('href');
-  const postedOn = $('.post-date').text().toLowerCase();
 
   const nodes = [];
   nodes.push($('<p>').append(`by ${postedBy}`));
@@ -180,11 +179,18 @@ async function doImport(importer, url, checkIfRelatedExists, logger) {
     const $ = cheerio.load(html);
 
     let date = 'unknown';
-    // extract year from article:published_time metadata
-    const pubDate = $('[property="article:published_time"]').attr('content');
-    if (pubDate) {
-      const d = moment(pubDate);
+
+    const postedOn = $('.post-date').text().toLowerCase();
+    if (postedOn) {
+      const d = moment(postedOn, 'MM-DD-YYYY');
       date = d.format('YYYY/MM/DD');
+    } else {
+      // fallback to article:published_time metadata
+      const pubDate = $('[property="article:published_time"]').attr('content');
+      if (pubDate) {
+        const d = moment(pubDate);
+        date = d.format('YYYY/MM/DD');
+      }
     }
 
     const $main = $('.main-content');
@@ -202,7 +208,7 @@ async function doImport(importer, url, checkIfRelatedExists, logger) {
     const $heroHr = $('<hr>').insertAfter($('.article-hero'));
 
     $('<hr>').insertAfter($heroHr);
-    const nodes = await handleAuthor(importer, $, checkIfRelatedExists, logger);
+    const nodes = await handleAuthor(importer, $, postedOn, checkIfRelatedExists, logger);
     let previous = $heroHr;
     nodes.forEach((n) => {
       previous = n.insertAfter(previous);
