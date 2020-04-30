@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/adobe/helix-theblog-importer/compare/v1.3.0...v1.4.0) (2020-04-30)
+
+
+### Features
+
+* **import:** handle main topic ([ce76d12](https://github.com/adobe/helix-theblog-importer/commit/ce76d1241fd533f0b3456eb6119bf45478d6307c))
+
 # [1.3.0](https://github.com/adobe/helix-theblog-importer/compare/v1.2.0...v1.3.0) (2020-04-28)
 
 
