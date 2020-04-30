@@ -16,6 +16,7 @@ const { epsagon } = require('@adobe/helix-epsagon');
 
 const cheerio = require('cheerio');
 const moment = require('moment');
+const escape = require('escape-html');
 const path = require('path');
 const rp = require('request-promise-native');
 
@@ -100,9 +101,17 @@ async function handleAuthor(importer, $, checkIfExists) {
 }
 
 async function handleTopics(importer, $, checkIfExists, logger) {
+  const mainTopic = escape($('[property="article:section"]').attr('content') || '');
+
   let topics = '';
   $('.article-footer-topics-wrap .text').each((i, t) => {
-    topics += `${$(t).html()}, `;
+    const topic = $(t).html();
+    if (topic === mainTopic) {
+      // put first
+      topics = `${topic}, ${topics}`;
+    } else {
+      topics += `${topic}, `;
+    }
   });
 
   topics = topics.slice(0, -2);
