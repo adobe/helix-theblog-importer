@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/adobe/helix-theblog-importer/compare/v1.4.1...v1.5.0) (2020-05-06)
+
+
+### Features
+
+* **import:** allow to cache imported html files ([1fb7598](https://github.com/adobe/helix-theblog-importer/commit/1fb7598aea251c609903c9296e2fa033890d7707))
+
 ## [1.4.1](https://github.com/adobe/helix-theblog-importer/compare/v1.4.0...v1.4.1) (2020-04-30)
 
 

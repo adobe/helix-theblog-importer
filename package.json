@@ -1,6 +1,6 @@
 {
   "name": "@adobe/helix-theblog-importer",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "private": true,
   "description": "Helix - TheBlog - Importer",
   "main": "src/index.js",
