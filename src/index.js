@@ -298,6 +298,7 @@ async function main(params = {}) {
     FASTLY_TOKEN,
     FASTLY_SERVICE_ID,
     localStorage,
+    cache,
   } = params;
 
   if (!url) {
@@ -378,6 +379,7 @@ async function main(params = {}) {
         },
       }),
       logger,
+      cache,
     });
 
     const date = await doImport(importer, url, checkIfRelatedExists, logger);

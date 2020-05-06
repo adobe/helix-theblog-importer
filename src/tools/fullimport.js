@@ -193,4 +193,5 @@ main({
   force: false,
   checkIfRelatedExists: true,
   localStorage: './output',
+  cache: './.cache',
 });

@@ -10,6 +10,8 @@
  * governing permissions and limitations under the License.
  */
 // eslint-disable-next-line max-classes-per-file
+const fs = require('fs-extra');
+const path = require('path');
 const unified = require('unified');
 const parse = require('rehype-parse');
 const rehype2remark = require('rehype-remark');
@@ -24,17 +26,30 @@ class HelixImporter {
     this.storageHandler = opts.storageHandler;
     this.blobHandler = opts.blobHandler;
     this.logger = opts.logger;
+    this.useCache = !!opts.cache;
+    this.cache = opts.cache;
   }
 
   async getPageContent(url) {
     this.logger.info(`Get page content for ${url}`);
 
     try {
+      if (this.useCache) {
+        const localPath = path.resolve(this.cache, `${new URL(url).pathname.replace(/\//gm, '')}.html`);
+        if (await fs.exists(localPath)) {
+          return fs.readFile(localPath);
+        }
+      }
       const html = await rp({
         uri: url,
         timeout: 60000,
         followRedirect: false,
       });
+      if (this.useCache) {
+        const localPath = path.resolve(this.cache, `${new URL(url).pathname.replace(/\//gm, '')}.html`);
+        await fs.mkdirs(path.dirname(localPath));
+        await fs.writeFile(localPath, html);
+      }
       return html;
     } catch (error) {
       this.logger.error(`Request error or timeout for ${url}: ${error.message}`);
