@@ -82,6 +82,13 @@ const EMBED_PATTERNS = [{
     const aTags = node.find('.twitter-tweet a');
     return aTags[aTags.length - 1].attribs.href;
   },
+}, {
+  // fallback to iframe src
+  match: () => true,
+  extract: (node) => {
+    const f = node.find('iframe');
+    return f.attr('src') || f.data('src');
+  },
 }];
 
 async function handleAuthor(importer, $, postedOn, checkIfExists) {
@@ -191,32 +198,6 @@ async function handleProducts(importer, $, checkIfExists, logger) {
   return output;
 }
 
-async function handleEmbeds($, logger) {
-  // embeds
-  await asyncForEach($('.embed-wrapper').toArray(), async (node) => {
-    const $w = $(node);
-    const $f = $w.find('iframe');
-    let src = $f.attr('src');
-
-    await asyncForEach(
-      EMBED_PATTERNS,
-      async (p) => {
-        if (p.match($w)) {
-          src = await p.extract($w, logger);
-        }
-        return src;
-      },
-    );
-
-    if (!src) {
-      throw new Error('Unsupported embed - no src found');
-    }
-    // replace iframe by "embed" image
-    $w.append(`<img src="${src}" class="hlx-embed">`);
-    $f.remove();
-  });
-}
-
 async function doImport(importer, url, checkIfRelatedExists, logger) {
   const html = await importer.getPageContent(url);
 
@@ -280,9 +261,28 @@ async function doImport(importer, url, checkIfRelatedExists, logger) {
     }
     $('.article-collection-header').remove();
 
+    // embeds
+    await asyncForEach($('.embed-wrapper, .spotify-wrapper').toArray(), async (node) => {
+      const $node = $(node);
 
-    handleEmbeds($, logger);
+      let src;
+      await asyncForEach(
+        EMBED_PATTERNS,
+        async (p) => {
+          if (p.match($node)) {
+            src = await p.extract($node, logger);
+          }
+          return src;
+        },
+      );
 
+      if (!src) {
+        throw new Error('Unsupported embed - no src found');
+      }
+      // replace children by "embed" image
+      $node.children().remove();
+      $node.append(`<img src="${src}" class="hlx-embed">`);
+    });
 
     // remove author / products section
     $('.article-author-wrap').remove();
