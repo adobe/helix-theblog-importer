@@ -57,7 +57,7 @@ class HelixImporter {
     }
   }
 
-  async createMarkdownFile(directory, name, content) {
+  async createMarkdownFile(directory, name, content, prepend) {
     this.logger.info(`Creating a new MD file: ${directory}/${name}.md`);
     return unified()
       .use(parse, { emitParseErrors: true, duplicateAttribute: false })
@@ -95,6 +95,10 @@ class HelixImporter {
             }
           });
         }
+        if (prepend) {
+          contents = prepend + contents;
+        }
+
         await this.storageHandler.put(p, contents);
         this.logger.info(`MD file created: ${p}`);
       });
