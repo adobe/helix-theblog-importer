@@ -41,8 +41,15 @@ const URLS_XLSX_WORKSHEET = 'urls';
 const URLS_XLSX_TABLE = 'listOfURLS';
 
 const EMBED_PATTERNS = [{
-  matchReg: /w.soundcloud.com\/player/gm,
-  extract: async (src, logger) => {
+  // w.soundcloud.com/player
+  match: (node) => {
+    const f = node.find('iframe');
+    const src = f.attr('src');
+    return src && src.match(/w.soundcloud.com\/player/gm);
+  },
+  extract: async (node, logger) => {
+    const f = node.find('iframe');
+    const src = f.attr('src');
     try {
       const html = await rp({
         uri: src,
@@ -62,6 +69,25 @@ const EMBED_PATTERNS = [{
       return src;
     }
     return src;
+  },
+}, {
+  // www.instagram.com
+  match: (node) => node.find('.instagram-media').length > 0,
+  extract: async (node) => node.find('.instagram-media').data('instgrm-permalink'),
+}, {
+  // twitter.com
+  match: (node) => node.find('.twitter-tweet a').length > 0,
+  extract: async (node) => {
+    // latest <a> seems to be the link to the tweet
+    const aTags = node.find('.twitter-tweet a');
+    return aTags[aTags.length - 1].attribs.href;
+  },
+}, {
+  // fallback to iframe src
+  match: () => true,
+  extract: (node) => {
+    const f = node.find('iframe');
+    return f.attr('src') || f.data('src');
   },
 }];
 
@@ -235,6 +261,29 @@ async function doImport(importer, url, checkIfRelatedExists, logger) {
     }
     $('.article-collection-header').remove();
 
+    // embeds
+    await asyncForEach($('.embed-wrapper, .spotify-wrapper').toArray(), async (node) => {
+      const $node = $(node);
+
+      let src;
+      await asyncForEach(
+        EMBED_PATTERNS,
+        async (p) => {
+          if (p.match($node)) {
+            src = await p.extract($node, logger);
+          }
+          return src;
+        },
+      );
+
+      if (!src) {
+        throw new Error('Unsupported embed - no src found');
+      }
+      // replace children by "embed" image
+      $node.children().remove();
+      $node.append(`<img src="${src}" class="hlx-embed">`);
+    });
+
     // remove author / products section
     $('.article-author-wrap').remove();
     // remove footer
@@ -245,27 +294,6 @@ async function doImport(importer, url, checkIfRelatedExists, logger) {
     $('.article-body-products').remove();
     // remove comments section
     $('.comments').remove();
-
-    // embeds
-    await asyncForEach($('.embed-wrapper').toArray(), async (node) => {
-      const $w = $(node);
-      const $f = $w.find('iframe');
-      let src = $f.attr('src');
-
-      await asyncForEach(
-        EMBED_PATTERNS,
-        async (p) => {
-          if (src.match(p.matchReg)) {
-            src = await p.extract(src, logger);
-          }
-          return src;
-        },
-      );
-
-      // replace iframe by "embed" image
-      $w.append(`<img src="${src}" class="hlx-embed">`);
-      $f.remove();
-    });
 
     const content = $main.html();
 
