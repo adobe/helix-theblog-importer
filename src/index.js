@@ -35,6 +35,7 @@ const TYPE_AUTHOR = 'authors';
 const TYPE_POST = 'drafts/migrated';
 const TYPE_TOPIC = 'topics';
 const TYPE_PRODUCT = 'products';
+const TYPE_BANNER = 'promotions';
 
 const URLS_XLSX = '/importer/urls.xlsx';
 const URLS_XLSX_WORKSHEET = 'urls';
@@ -84,7 +85,10 @@ const EMBED_PATTERNS = [{
   },
 }, {
   // fallback to iframe src
-  match: () => true,
+  match: (node) => {
+    const f = node.find('iframe');
+    return f.attr('src') || f.data('src');
+  },
   extract: (node) => {
     const f = node.find('iframe');
     return f.attr('src') || f.data('src');
@@ -123,6 +127,62 @@ async function handleAuthor(importer, $, postedOn, checkIfExists) {
   }
 
   return nodes;
+}
+
+async function handleBanner(node, $, importer, checkIfExists) {
+  const href = node.find('.cta.source-code').attr('href');
+  if (!href) {
+    // do not import banners without a valid cta
+    return null;
+  }
+
+  const title = node.find('h2').text();
+
+  // use title if available or fallback to name in the href
+  const bannerFilename = title ? title.toLowerCase().trim().replace(/\s/g, '-') : path.parse(href).name;
+
+  if (bannerFilename !== '' && (!checkIfExists || !await importer.exists(`${OUTPUT_PATH}/${TYPE_BANNER}`, bannerFilename))) {
+    const content = [];
+    content.push(`<h1>${title}</h1>`);
+
+    const productWrap = node.find('.product-banner-wrap');
+    if (productWrap) {
+      const bannerImg = productWrap.css('background-image');
+      if (bannerImg) {
+        // remove url()
+        content.push(`<img src="${bannerImg.replace(/url\((.*)\)/, '$1')}">`);
+      }
+    }
+
+    const pText = [];
+    node.find('p').each((i, p) => {
+      const $p = $(p);
+      const t = $p.text().trim();
+      if (t !== '') {
+        pText.push(t);
+      }
+    });
+
+    if (pText.length === 0) {
+      // some variation...
+      const html = node.find('.text-2-block').html();
+      if (html) {
+        pText.push(html);
+      }
+    }
+
+    content.push(`<p>${pText.join('<br>')}</p>`);
+    content.push(`<a href="${href}">${node.find('.cta.source-code span').html()}</a>`);
+
+    const productIcon = node.find('.product-icon');
+    if (productIcon && productIcon.length > 0) {
+      content.push(`<br><br><img src="${productIcon.attr('src')}">`);
+    }
+    await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_BANNER}`, bannerFilename, content.join(''), '---\nclass: banner\n---\n\n');
+  }
+
+  // convert to internal embed
+  return `<img src='/${OUTPUT_PATH}/${TYPE_BANNER}/${bannerFilename}.html' class="hlx-embed">`;
 }
 
 async function handleTopics(importer, $, checkIfExists, logger) {
@@ -282,6 +342,16 @@ async function doImport(importer, url, checkIfRelatedExists, logger) {
       // replace children by "embed" image
       $node.children().remove();
       $node.append(`<img src="${src}" class="hlx-embed">`);
+    });
+
+    // banners
+    await asyncForEach($('.product-banner-col').toArray(), async (node) => {
+      const $node = $(node);
+      const embed = await handleBanner($node, $, importer, checkIfRelatedExists, logger);
+      if (embed) {
+        $node.after(embed);
+      }
+      $node.remove();
     });
 
     // remove author / products section
