@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/adobe/helix-theblog-importer/compare/v1.6.0...v1.7.0) (2020-05-08)
+
+
+### Features
+
+* **banners:** support for banners during import ([808c1ae](https://github.com/adobe/helix-theblog-importer/commit/808c1ae4480b7aa5e2e5faca9f01e2ef1f86bc32))
+
 # [1.6.0](https://github.com/adobe/helix-theblog-importer/compare/v1.5.0...v1.6.0) (2020-05-07)
 
 
