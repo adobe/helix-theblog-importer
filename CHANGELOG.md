@@ -1,3 +1,10 @@
+## [1.8.1](https://github.com/adobe/helix-theblog-importer/compare/v1.8.0...v1.8.1) (2020-05-11)
+
+
+### Bug Fixes
+
+* **ci:** trigger a new clean release ([5d64ebb](https://github.com/adobe/helix-theblog-importer/commit/5d64ebb369b785423d6d3e29133339c8c0c4daee))
+
 # [1.8.0](https://github.com/adobe/helix-theblog-importer/compare/v1.7.0...v1.8.0) (2020-05-11)
 
 
