@@ -76,12 +76,31 @@ const EMBED_PATTERNS = [{
   match: (node) => node.find('.instagram-media').length > 0,
   extract: async (node) => node.find('.instagram-media').data('instgrm-permalink'),
 }, {
+  // www.instagram.com v2
+  match: (node) => node.find('.instagram-media').length > 0,
+  extract: async (node) => node.find('.instagram-media a').attr('href'),
+}, {
   // twitter.com
   match: (node) => node.find('.twitter-tweet a').length > 0,
   extract: async (node) => {
     // latest <a> seems to be the link to the tweet
     const aTags = node.find('.twitter-tweet a');
     return aTags[aTags.length - 1].attribs.href;
+  },
+}, {
+  // spark
+  match: (node) => node.find('a.asp-embed-link').length > 0,
+  extract: async (node) => node.find('a.asp-embed-link').attr('href'),
+}, {
+  // media.giphy.com
+  match: (node) => {
+    const img = node.find('img');
+    const src = img ? img.attr('src') : null;
+    return src && src.match(/media.giphy.com/gm);
+  },
+  extract: async (node) => {
+    const img = node.find('img');
+    return img.attr('src');
   },
 }, {
   // fallback to iframe src
@@ -337,11 +356,13 @@ async function doImport(importer, url, checkIfRelatedExists, logger) {
       );
 
       if (!src) {
-        throw new Error('Unsupported embed - no src found');
+        // throw new Error('Unsupported embed - no src found');
+        logger.warn(`Unsupported embed - could not resolve embed src in ${url}`);
+      } else {
+        // replace children by "embed" image
+        $node.children().remove();
+        $node.append(`<img src="${src}" class="hlx-embed">`);
       }
-      // replace children by "embed" image
-      $node.children().remove();
-      $node.append(`<img src="${src}" class="hlx-embed">`);
     });
 
     // banners
