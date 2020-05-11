@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/adobe/helix-theblog-importer/compare/v1.7.0...v1.8.0) (2020-05-11)
+
+
+### Features
+
+* **import:** more embeds support ([81972ce](https://github.com/adobe/helix-theblog-importer/commit/81972ce231be1f77dba0c6115258b2f8562e6b67))
+
 # [1.7.0](https://github.com/adobe/helix-theblog-importer/compare/v1.6.0...v1.7.0) (2020-05-08)
 
 
