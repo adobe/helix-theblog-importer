@@ -53,7 +53,7 @@ class HelixImporter {
       return html;
     } catch (error) {
       this.logger.error(`Request error or timeout for ${url}: ${error.message}`);
-      throw new Error(`Cannot get content for ${url}`);
+      throw new Error(`Cannot get content for ${url}: ${error.message}`);
     }
   }
 

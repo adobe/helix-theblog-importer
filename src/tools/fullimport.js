@@ -33,14 +33,18 @@ async function doImport(params, url) {
     if (result.statusCode === 200) {
       console.debug(result.body);
       return true;
+    }
+    if (result.body.indexOf('301') !== -1) {
+      // append to 301 list
+      await params._301sFile.append([{ link: url }]);
     } else {
       console.error(`Error in action for ${url}: `, result.body);
       await params._5xxFile.append([{ link: url }]);
-      return false;
     }
+    return false;
   } catch (error) {
     console.error(`Error processing import for ${url}: ${error.message}`);
-    if (error.message.indexOf('301 Moved Permanently') !== -1) {
+    if (error.message.indexOf('301') !== -1) {
       // append to 301 list
       await params._301sFile.append([{ link: url }]);
     } else {
@@ -190,7 +194,7 @@ main({
   AZURE_BLOB_URI: process.env.AZURE_BLOB_URI,
   FASTLY_TOKEN: process.env.FASTLY_TOKEN,
   FASTLY_SERVICE_ID: process.env.FASTLY_SERVICE_ID,
-  force: false,
+  force: true,
   checkIfRelatedExists: true,
   localStorage: './output',
   cache: './.cache',
