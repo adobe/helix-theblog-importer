@@ -19,6 +19,7 @@ const moment = require('moment');
 const escape = require('escape-html');
 const path = require('path');
 const rp = require('request-promise-native');
+const sanitize = require('sanitize-filename');
 
 const HelixImporter = require('./generic/HelixImporter');
 const BlogHandler = require('./generic/BlogHandler');
@@ -201,7 +202,7 @@ async function handleBanner(node, $, importer, checkIfExists) {
   }
 
   // convert to internal embed
-  return `<img src='/${OUTPUT_PATH}/${TYPE_BANNER}/${bannerFilename}.html' class="hlx-embed">`;
+  return `<img src='/${OUTPUT_PATH}/${TYPE_BANNER}/${sanitize(bannerFilename)}.html' class="hlx-embed">`;
 }
 
 async function handleTopics(importer, $, checkIfExists, logger) {
