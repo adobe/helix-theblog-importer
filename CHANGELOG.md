@@ -1,3 +1,10 @@
+## [1.8.2](https://github.com/adobe/helix-theblog-importer/compare/v1.8.1...v1.8.2) (2020-05-14)
+
+
+### Bug Fixes
+
+* **import:** sanitize filenames ([34ef473](https://github.com/adobe/helix-theblog-importer/commit/34ef47362bbe12aa43cdd8e85af00e42a02cc28f))
+
 ## [1.8.1](https://github.com/adobe/helix-theblog-importer/compare/v1.8.0...v1.8.1) (2020-05-11)
 
 
