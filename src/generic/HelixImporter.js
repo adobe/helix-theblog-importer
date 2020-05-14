@@ -15,6 +15,7 @@ const path = require('path');
 const unified = require('unified');
 const parse = require('rehype-parse');
 const rehype2remark = require('rehype-remark');
+const sanitize = require('sanitize-filename');
 const stringify = require('remark-stringify');
 const rp = require('request-promise-native');
 const cheerio = require('cheerio');
@@ -73,7 +74,7 @@ class HelixImporter {
       })
       .process(content)
       .then(async (file) => {
-        const p = `${directory}/${name}.md`;
+        const p = `${directory}/${sanitize(name)}.md`;
         let { contents } = file;
 
         // process image links
@@ -105,8 +106,8 @@ class HelixImporter {
   }
 
   async exists(directory, name) {
-    this.logger.info(`Checking if MD file exists: ${directory}/${name}.md`);
-    const p = `${directory}/${name}.md`;
+    this.logger.info(`Checking if MD file exists: ${directory}/${sanitize(name)}.md`);
+    const p = `${directory}/${sanitize(name)}.md`;
     return this.storageHandler.exists(p);
   }
 }
