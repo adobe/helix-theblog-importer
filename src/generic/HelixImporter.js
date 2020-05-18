@@ -58,8 +58,9 @@ class HelixImporter {
     }
   }
 
-  async createMarkdownFile(directory, name, content, prepend) {
-    this.logger.info(`Creating a new MD file: ${directory}/${name}.md`);
+  async createMarkdownFile(directory, name, content, prepend, imageLocation) {
+    const sanitizedName = sanitize(name);
+    this.logger.info(`Creating a new MD file: ${directory}/${sanitizedName}.md`);
     return unified()
       .use(parse, { emitParseErrors: true, duplicateAttribute: false })
       .use(rehype2remark)
@@ -74,25 +75,43 @@ class HelixImporter {
       })
       .process(content)
       .then(async (file) => {
-        const p = `${directory}/${sanitize(name)}.md`;
+        const p = `${directory}/${sanitizedName}.md`;
         let { contents } = file;
 
         // process image links
         const $ = cheerio.load(content);
         const imgs = $('img');
         if (imgs && imgs.length > 0) {
-          // copy resources (imgs...) to blob handler (azure)
-          await asyncForEach(imgs, async (img) => {
+          await asyncForEach(imgs, async (img, index) => {
             const $img = $(img);
             const src = $img.attr('src');
             const isEmbed = $img.hasClass('hlx-embed');
             if (!isEmbed && src !== '' && file.contents.indexOf(src) !== -1) {
-              const externalURL = await this.blobHandler.copyFromURL(encodeURI(src));
-              if (externalURL) {
-                contents = contents.replace(new RegExp(`${src.replace('.', '\\.')}`, 'g'), externalURL);
+              let newSrc;
+              if (!imageLocation) {
+                // copy resources (imgs...) to blob handler
+                const blob = await this.blobHandler.getBlob(encodeURI(src));
+                if (blob) {
+                  newSrc = blob.uri;
+                } else {
+                  this.logger.warn(`Image could not be copied to blob handler: ${src}`);
+                }
               } else {
-                this.logger.warn(`Image could not be copied: ${src}`);
+                const data = await rp({
+                  uri: src,
+                  timeout: 60000,
+                  followRedirect: true,
+                  encoding: null,
+                });
+                const { ext } = path.parse(src);
+                const imgName = `${sanitizedName}${index > 0 ? `-${index}` : ''}${ext}`;
+                newSrc = `${imageLocation}/${imgName}`;
+                await this.storageHandler.put(newSrc, data);
+                this.logger.info(`Image file created: ${newSrc}`);
+                // absolute link
+                newSrc = `/${newSrc}`;
               }
+              contents = contents.replace(new RegExp(`${src.replace('.', '\\.')}`, 'g'), newSrc);
             }
           });
         }
@@ -106,8 +125,9 @@ class HelixImporter {
   }
 
   async exists(directory, name) {
-    this.logger.info(`Checking if MD file exists: ${directory}/${sanitize(name)}.md`);
-    const p = `${directory}/${sanitize(name)}.md`;
+    const sanitizedName = sanitize(name);
+    this.logger.info(`Checking if MD file exists: ${directory}/${sanitizedName}.md`);
+    const p = `${directory}/${sanitizedName}.md`;
     return this.storageHandler.exists(p);
   }
 }
