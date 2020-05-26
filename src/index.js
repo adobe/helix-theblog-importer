@@ -258,7 +258,7 @@ async function handleProducts(importer, $, checkIfExists, logger) {
     products.push({
       name,
       fileName,
-      href: p.href,
+      href: $p.attr('href'),
       imgSrc: src,
     });
     output += `${name}, `;
@@ -271,7 +271,11 @@ async function handleProducts(importer, $, checkIfExists, logger) {
     async (p) => {
       if (!checkIfExists || !await importer.exists(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, p.fileName)) {
         logger.info(`Found a new product: ${p.name}`);
-        await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, `${p.fileName}`, `<h1>${p.name}</h1><a href='${p.href}'><img src='${p.imgSrc}'></a>`, null, `${TYPE_ASSET}/${TYPE_PRODUCT}`);
+        let content = `<h1>${p.name}</h1><img src='${p.imgSrc}'>`;
+        if (p.href) {
+          content = `<h1>${p.name}</h1><a href='${p.href}'><img src='${p.imgSrc}'></a>`;
+        }
+        await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, `${p.fileName}`, content, null, `${TYPE_ASSET}/${TYPE_PRODUCT}`);
       }
     },
   );
