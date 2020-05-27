@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/adobe/helix-theblog-importer/compare/v1.8.2...v1.9.0) (2020-05-27)
+
+
+### Features
+
+* **import:** new image handlings ([#27](https://github.com/adobe/helix-theblog-importer/issues/27)) ([d913142](https://github.com/adobe/helix-theblog-importer/commit/d913142ac0d9bc2b6c78266584b6ae3166339391))
+
 ## [1.8.2](https://github.com/adobe/helix-theblog-importer/compare/v1.8.1...v1.8.2) (2020-05-14)
 
 
