@@ -365,9 +365,9 @@ async function doImport(importer, url, checkIfRelatedExists, logger) {
         // throw new Error('Unsupported embed - no src found');
         logger.warn(`Unsupported embed - could not resolve embed src in ${url}`);
       } else {
-        // replace children by "embed" image
+        // replace children by "hlxembed" custom tag
         $node.children().remove();
-        $node.append(`<img src="${src}" class="hlx-embed">`);
+        $node.append(`<hlxembed>${src}</hlxembed>`);
       }
     });
 

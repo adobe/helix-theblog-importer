@@ -61,9 +61,15 @@ class HelixImporter {
   async createMarkdownFile(directory, name, content, prepend, imageLocation) {
     const sanitizedName = sanitize(name);
     this.logger.info(`Creating a new MD file: ${directory}/${sanitizedName}.md`);
+    // use custom tag and rendering because text is always encoded by default: we need the raw url
+    stringify.Compiler.prototype.visitors.hlxembed = (node) => node.value;
     return unified()
       .use(parse, { emitParseErrors: true, duplicateAttribute: false })
-      .use(rehype2remark)
+      .use(rehype2remark, {
+        handlers: {
+          hlxembed: (h, node) => h(node, 'hlxembed', node.children[0].value),
+        },
+      })
       .use(stringify, {
         bullet: '-',
         fence: '`',
