@@ -13,6 +13,7 @@ const { wrap } = require('@adobe/openwhisk-action-utils');
 const { logger: oLogger } = require('@adobe/openwhisk-action-logger');
 const { wrap: status } = require('@adobe/helix-status');
 const { epsagon } = require('@adobe/helix-epsagon');
+const { BlobHandler } = require('@adobe/helix-documents-support');
 
 const cheerio = require('cheerio');
 const moment = require('moment');
@@ -22,7 +23,6 @@ const rp = require('request-promise-native');
 const sanitize = require('sanitize-filename');
 
 const HelixImporter = require('./generic/HelixImporter');
-const BlogHandler = require('./generic/BlogHandler');
 const { asyncForEach } = require('./generic/utils');
 
 const OneDriveHandler = require('./handlers/OneDriveHandler');
@@ -37,6 +37,7 @@ const TYPE_POST = 'drafts/migrated';
 const TYPE_TOPIC = 'topics';
 const TYPE_PRODUCT = 'products';
 const TYPE_BANNER = 'promotions';
+const TYPE_ASSET = 'assets';
 
 const URLS_XLSX = '/importer/urls.xlsx';
 const URLS_XLSX_WORKSHEET = 'urls';
@@ -142,7 +143,7 @@ async function handleAuthor(importer, $, postedOn, checkIfExists) {
       $div.remove();
 
       const content = $main.html();
-      await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, authorFilename, content);
+      await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, authorFilename, content, null, `${TYPE_ASSET}/${TYPE_AUTHOR}`);
     }
   }
 
@@ -198,7 +199,7 @@ async function handleBanner(node, $, importer, checkIfExists) {
     if (productIcon && productIcon.length > 0) {
       content.push(`<br><br><img src="${productIcon.attr('src')}">`);
     }
-    await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_BANNER}`, bannerFilename, content.join(''), '---\nclass: banner\n---\n\n');
+    await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_BANNER}`, bannerFilename, content.join(''), '---\nclass: banner\n---\n\n', `${TYPE_ASSET}/${TYPE_BANNER}`);
   }
 
   // convert to internal embed
@@ -257,7 +258,7 @@ async function handleProducts(importer, $, checkIfExists, logger) {
     products.push({
       name,
       fileName,
-      href: p.href,
+      href: $p.attr('href'),
       imgSrc: src,
     });
     output += `${name}, `;
@@ -270,7 +271,11 @@ async function handleProducts(importer, $, checkIfExists, logger) {
     async (p) => {
       if (!checkIfExists || !await importer.exists(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, p.fileName)) {
         logger.info(`Found a new product: ${p.name}`);
-        await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, `${p.fileName}`, `<h1>${p.name}</h1><a href='${p.href}'><img src='${p.imgSrc}'></a>`);
+        let content = `<h1>${p.name}</h1><img src='${p.imgSrc}'>`;
+        if (p.href) {
+          content = `<h1>${p.name}</h1><a href='${p.href}'><img src='${p.imgSrc}'></a>`;
+        }
+        await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, `${p.fileName}`, content, null, `${TYPE_ASSET}/${TYPE_PRODUCT}`);
       }
     },
   );
@@ -488,7 +493,7 @@ async function main(params = {}) {
 
     const importer = new HelixImporter({
       storageHandler: handler,
-      blobHandler: new BlogHandler({
+      blobHandler: new BlobHandler({
         azureBlobSAS,
         azureBlobURI,
         log: {

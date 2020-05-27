@@ -58,8 +58,9 @@ class HelixImporter {
     }
   }
 
-  async createMarkdownFile(directory, name, content, prepend) {
-    this.logger.info(`Creating a new MD file: ${directory}/${name}.md`);
+  async createMarkdownFile(directory, name, content, prepend, imageLocation) {
+    const sanitizedName = sanitize(name);
+    this.logger.info(`Creating a new MD file: ${directory}/${sanitizedName}.md`);
     return unified()
       .use(parse, { emitParseErrors: true, duplicateAttribute: false })
       .use(rehype2remark)
@@ -74,25 +75,86 @@ class HelixImporter {
       })
       .process(content)
       .then(async (file) => {
-        const p = `${directory}/${sanitize(name)}.md`;
+        const p = `${directory}/${sanitizedName}.md`;
         let { contents } = file;
 
         // process image links
         const $ = cheerio.load(content);
         const imgs = $('img');
         if (imgs && imgs.length > 0) {
-          // copy resources (imgs...) to blob handler (azure)
-          await asyncForEach(imgs, async (img) => {
+          await asyncForEach(imgs, async (img, index) => {
             const $img = $(img);
             const src = $img.attr('src');
             const isEmbed = $img.hasClass('hlx-embed');
             if (!isEmbed && src !== '' && file.contents.indexOf(src) !== -1) {
-              const externalURL = await this.blobHandler.copyFromURL(encodeURI(src));
-              if (externalURL) {
-                contents = contents.replace(new RegExp(`${src.replace('.', '\\.')}`, 'g'), externalURL);
+              let newSrc = '';
+              if (!imageLocation) {
+                // copy resources (imgs...) to blob handler
+                let blob;
+                try {
+                  blob = await this.blobHandler.getBlob(encodeURI(src));
+                } catch (error) {
+                  // ignore non exiting images, otherwise throw an error
+                  if (error.message.indexOf('StatusCodeError: 404') === -1) {
+                    this.logger.error(`Cannot upload blob for ${src}: ${error.message}`);
+                    throw new Error(`Cannot upload blob for ${src}: ${error.message}`);
+                  }
+                }
+                if (blob) {
+                  newSrc = blob.uri;
+                } else {
+                  this.logger.warn(`Image could not be copied to blob handler: ${src}`);
+                }
               } else {
-                this.logger.warn(`Image could not be copied: ${src}`);
+                let response;
+                try {
+                  response = await rp({
+                    uri: src,
+                    timeout: 60000,
+                    followRedirect: true,
+                    encoding: null,
+                    resolveWithFullResponse: true,
+                  });
+                } catch (error) {
+                  // ignore 404 images but throw an error for other issues
+                  if (error.statusCode !== 404) {
+                    this.logger.error(`Cannot download image for ${src}: ${error.message}`);
+                    throw new Error(`Cannot download image for ${src}: ${error.message}`);
+                  }
+                }
+
+                if (response) {
+                  let { ext } = path.parse(src);
+                  if (!ext) {
+                    const dispo = response.headers['content-disposition'];
+                    if (dispo) {
+                      // content-disposition:"inline; filename="xyz.jpeg""
+                      try {
+                        // eslint-disable-next-line prefer-destructuring
+                        ext = `.${dispo.match(/\.(.*)"/)[1]}`;
+                      } catch (e) {
+                        this.logger.warn(`Cannot find extension for ${src} with content-disposition`);
+                      }
+                    } else {
+                      // use content-type
+                      const type = response.headers['content-type'];
+                      try {
+                        // eslint-disable-next-line prefer-destructuring
+                        ext = `.${type.match(/\/(.*)/)[1]}`;
+                      } catch (e) {
+                        this.logger.warn(`Cannot find an extension for ${src} with content-type`);
+                      }
+                    }
+                  }
+                  const imgName = `${sanitizedName}${index > 0 ? `-${index}` : ''}${ext}`;
+                  newSrc = `${imageLocation}/${imgName}`;
+                  await this.storageHandler.put(newSrc, response.body);
+                  this.logger.info(`Image file created: ${newSrc}`);
+                  // absolute link
+                  newSrc = `/${newSrc}`;
+                }
               }
+              contents = contents.replace(new RegExp(`${src.replace('.', '\\.')}`, 'g'), newSrc);
             }
           });
         }
@@ -106,8 +168,9 @@ class HelixImporter {
   }
 
   async exists(directory, name) {
-    this.logger.info(`Checking if MD file exists: ${directory}/${sanitize(name)}.md`);
-    const p = `${directory}/${sanitize(name)}.md`;
+    const sanitizedName = sanitize(name);
+    this.logger.info(`Checking if MD file exists: ${directory}/${sanitizedName}.md`);
+    const p = `${directory}/${sanitizedName}.md`;
     return this.storageHandler.exists(p);
   }
 }
