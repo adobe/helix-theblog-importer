@@ -203,7 +203,7 @@ async function handleBanner(node, $, importer, checkIfExists) {
   }
 
   // convert to internal embed
-  return `<img src='/${OUTPUT_PATH}/${TYPE_BANNER}/${sanitize(bannerFilename)}.html' class="hlx-embed">`;
+  return `<hlxembed>/${OUTPUT_PATH}/${TYPE_BANNER}/${sanitize(bannerFilename)}.html</hlxembed>`;
 }
 
 async function handleTopics(importer, $, checkIfExists, logger) {
@@ -369,6 +369,14 @@ async function doImport(importer, url, checkIfRelatedExists, logger) {
         $node.children().remove();
         $node.append(`<hlxembed>${src}</hlxembed>`);
       }
+    });
+    // there might be some remaining iframes, just use the src as an embed.
+    $('iframe').each((i, iframe) => {
+      const $f = $(iframe);
+      if ($f.attr('src') || $f.data('src')) {
+        $(`<hlxembed>${$f.attr('src') || $f.data('src')}</hlxembed>`).insertAfter($f);
+      }
+      $f.remove();
     });
 
     // banners
