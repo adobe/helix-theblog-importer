@@ -18,7 +18,6 @@ const rehype2remark = require('rehype-remark');
 const sanitize = require('sanitize-filename');
 const stringify = require('remark-stringify');
 const rp = require('request-promise-native');
-const toHtml = require('hast-util-to-html');
 const all = require('hast-util-to-mdast/lib/all');
 const cheerio = require('cheerio');
 

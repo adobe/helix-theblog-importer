@@ -1,3 +1,10 @@
+# [1.10.0](https://github.com/adobe/helix-theblog-importer/compare/v1.9.0...v1.10.0) (2020-05-27)
+
+
+### Features
+
+* **embed:** IA Writer-Style embeds ([#30](https://github.com/adobe/helix-theblog-importer/issues/30)) ([ffa1291](https://github.com/adobe/helix-theblog-importer/commit/ffa12915f5a11cb796fd2ca09a713959ca18fc90))
+
 # [1.9.0](https://github.com/adobe/helix-theblog-importer/compare/v1.8.2...v1.9.0) (2020-05-27)
 
 
