@@ -283,6 +283,34 @@ async function handleProducts(importer, $, checkIfExists, logger) {
   return output;
 }
 
+function reviewInlineElements($, tagName) {
+  // collaspe consecutive <tag>
+  // and make sure element does not start ends with spaces while it is before / after some text
+  const tags = $(tagName).toArray();
+  for (let i = tags.length - 1; i >= 0; i -= 1) {
+    const tag = tags[i];
+    const $tag = $(tag);
+    const text = $(tag).text();
+    if (tag.previousSibling) {
+      const $previousSibling = $(tag.previousSibling);
+      if (tag.previousSibling.tagName === tagName) {
+        // previous sibling is an <tag>, merge current one inside the previous one
+        $previousSibling.append($tag.html());
+        $tag.remove();
+      } else if (text && text.indexOf(' ') === 0 && tag.previousSibling.type === 'text') {
+        // first character in the <tag> is a space and previous sibling is a text
+        // -> space needs to be moved to end of previous
+        tag.previousSibling.data = `${tag.previousSibling.data} `;
+      }
+    }
+    if (tag.nextSibling && text && text.lastIndexOf(' ') === text.length - 1 && tag.nextSibling.type === 'text') {
+      // last character in the <tag> is a space and next sibling is a text
+      // -> space needs to be moved to the begining of next
+      tag.nextSibling.data = ` ${tag.nextSibling.data}`;
+    }
+  }
+}
+
 async function doImport(importer, url, checkIfRelatedExists, logger) {
   const html = await importer.getPageContent(url);
 
@@ -380,6 +408,11 @@ async function doImport(importer, url, checkIfRelatedExists, logger) {
       }
       $node.remove();
     });
+
+    // collaspe consecutive <em>, <strong>, <u>...
+    // and make sure they do not start / end with spaces while it is before / after some text
+    reviewInlineElements($, 'em');
+    reviewInlineElements($, 'strong');
 
     // remove author / products section
     $('.article-author-wrap').remove();
