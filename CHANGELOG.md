@@ -1,3 +1,10 @@
+## [1.10.1](https://github.com/adobe/helix-theblog-importer/compare/v1.10.0...v1.10.1) (2020-05-28)
+
+
+### Bug Fixes
+
+* **import:** inline elements handling (em and strong) ([81189a0](https://github.com/adobe/helix-theblog-importer/commit/81189a07e35fda3a5f1e94c64cf857eb2d1ff92d))
+
 # [1.10.0](https://github.com/adobe/helix-theblog-importer/compare/v1.9.0...v1.10.0) (2020-05-27)
 
 
