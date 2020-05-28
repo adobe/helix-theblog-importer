@@ -1,3 +1,10 @@
+## [1.10.2](https://github.com/adobe/helix-theblog-importer/compare/v1.10.1...v1.10.2) (2020-05-28)
+
+
+### Bug Fixes
+
+* **import:** iframe embeds and banners with IA Writer style ([b8e22ac](https://github.com/adobe/helix-theblog-importer/commit/b8e22ac7a25bf1aa9e4035c551f945297a39d3f1))
+
 ## [1.10.1](https://github.com/adobe/helix-theblog-importer/compare/v1.10.0...v1.10.1) (2020-05-28)
 
 
