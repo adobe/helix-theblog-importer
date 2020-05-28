@@ -18,6 +18,7 @@ const rehype2remark = require('rehype-remark');
 const sanitize = require('sanitize-filename');
 const stringify = require('remark-stringify');
 const rp = require('request-promise-native');
+const all = require('hast-util-to-mdast/lib/all');
 const cheerio = require('cheerio');
 
 const { asyncForEach } = require('./utils');
@@ -61,13 +62,13 @@ class HelixImporter {
   async createMarkdownFile(directory, name, content, prepend, imageLocation) {
     const sanitizedName = sanitize(name);
     this.logger.info(`Creating a new MD file: ${directory}/${sanitizedName}.md`);
-    // use custom tag and rendering because text is always encoded by default: we need the raw url
-    stringify.Compiler.prototype.visitors.hlxembed = (node) => node.value;
-    return unified()
+
+    const processor = unified()
       .use(parse, { emitParseErrors: true, duplicateAttribute: false })
       .use(rehype2remark, {
         handlers: {
           hlxembed: (h, node) => h(node, 'hlxembed', node.children[0].value),
+          u: (h, node) => h(node, 'u', all(h, node)),
         },
       })
       .use(stringify, {
@@ -79,7 +80,34 @@ class HelixImporter {
         ruleRepetition: 3,
         ruleSpaces: false,
       })
-      .process(content)
+      .use(() => {
+        // use custom tag and rendering because text is always encoded by default
+        // we need the raw url
+        processor.Compiler.prototype.visitors.hlxembed = (node) => node.value;
+      })
+      .use(() => {
+        processor.Compiler.prototype.visitors.u = (node) => {
+          // u handling: remove the u is the first element is a link
+          if (node.children && node.children.length > 0) {
+            const children = node.children.map((child) => processor.stringify(child));
+            if (node.children[0].type === 'link') {
+              // first element in the <u> is a link: remove the <u> - unsupported case
+              return `${children.join()}`;
+            }
+            return `<u>${children.join()}</u>`;
+          }
+          return '';
+        };
+      })
+      .use(() => {
+        const originalEmphasis = processor.Compiler.prototype.visitors.emphasis;
+        processor.Compiler.prototype.visitors.emphasis = (node) => {
+          const ori = originalEmphasis.apply(processor.Compiler(), [node]);
+          return ori;
+        };
+      });
+
+    processor.process(content)
       .then(async (file) => {
         const p = `${directory}/${sanitizedName}.md`;
         let { contents } = file;
