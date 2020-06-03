@@ -239,7 +239,7 @@ async function handleTopics(importer, $, checkIfExists, logger) {
   return topics;
 }
 
-async function handleProducts(importer, $, checkIfExists, logger) {
+async function handleProducts(importer, $, checkIfExists, doCreateAssets, logger) {
   let output = '';
   const products = [];
   $('.sidebar-products-row .product-team-link').each((i, p) => {
@@ -276,7 +276,7 @@ async function handleProducts(importer, $, checkIfExists, logger) {
         if (p.href) {
           content = `<h1>${p.name}</h1><a href='${p.href}'><img src='${p.imgSrc}'></a>`;
         }
-        await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, `${p.fileName}`, content, null, `${TYPE_PRODUCT_ICONS}`);
+        await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, `${p.fileName}`, content, null, `${TYPE_PRODUCT_ICONS}`, doCreateAssets);
       }
     },
   );
@@ -312,7 +312,7 @@ function reviewInlineElements($, tagName) {
   }
 }
 
-async function doImport(importer, url, checkIfRelatedExists, logger) {
+async function doImport(importer, url, checkIfRelatedExists, doCreateAssets = false, logger) {
   const html = await importer.getPageContent(url);
 
   if (html && html !== '') {
@@ -355,7 +355,7 @@ async function doImport(importer, url, checkIfRelatedExists, logger) {
     });
 
     const topics = await handleTopics(importer, $, checkIfRelatedExists, logger);
-    const products = await handleProducts(importer, $, checkIfRelatedExists, logger);
+    const products = await handleProducts(importer, $, checkIfRelatedExists, doCreateAssets, logger);
 
     const $topicsWrap = $('<p>');
     $topicsWrap.html(`Topics: ${topics}`);
@@ -466,6 +466,7 @@ async function main(params = {}) {
     FASTLY_SERVICE_ID,
     localStorage,
     cache,
+    doCreateAssets,
   } = params;
 
   if (!url) {
@@ -549,7 +550,7 @@ async function main(params = {}) {
       cache,
     });
 
-    const date = await doImport(importer, url, checkIfRelatedExists, logger);
+    const date = await doImport(importer, url, checkIfRelatedExists, doCreateAssets, logger);
 
     if (FASTLY_SERVICE_ID && FASTLY_TOKEN) {
       const fastly = new FastlyHandler({
