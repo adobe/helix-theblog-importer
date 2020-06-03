@@ -37,7 +37,8 @@ const TYPE_POST = 'drafts/migrated';
 const TYPE_TOPIC = 'topics';
 const TYPE_PRODUCT = 'products';
 const TYPE_BANNER = 'promotions';
-const TYPE_ASSET = 'assets';
+
+const TYPE_PRODUCT_ICONS = 'icons';
 
 const URLS_XLSX = '/importer/urls.xlsx';
 const URLS_XLSX_WORKSHEET = 'urls';
@@ -143,7 +144,7 @@ async function handleAuthor(importer, $, postedOn, checkIfExists) {
       $div.remove();
 
       const content = $main.html();
-      await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, authorFilename, content, null, `${TYPE_ASSET}/${TYPE_AUTHOR}`);
+      await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, authorFilename, content);
     }
   }
 
@@ -199,7 +200,7 @@ async function handleBanner(node, $, importer, checkIfExists) {
     if (productIcon && productIcon.length > 0) {
       content.push(`<br><br><img src="${productIcon.attr('src')}">`);
     }
-    await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_BANNER}`, bannerFilename, content.join(''), '---\nclass: banner\n---\n\n', `${TYPE_ASSET}/${TYPE_BANNER}`);
+    await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_BANNER}`, bannerFilename, content.join(''), '---\nclass: banner\n---\n\n');
   }
 
   // convert to internal embed
@@ -275,7 +276,7 @@ async function handleProducts(importer, $, checkIfExists, logger) {
         if (p.href) {
           content = `<h1>${p.name}</h1><a href='${p.href}'><img src='${p.imgSrc}'></a>`;
         }
-        await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, `${p.fileName}`, content, null, `${TYPE_ASSET}/${TYPE_PRODUCT}`);
+        await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, `${p.fileName}`, content, null, `${TYPE_PRODUCT_ICONS}`);
       }
     },
   );
@@ -550,13 +551,6 @@ async function main(params = {}) {
 
     const date = await doImport(importer, url, checkIfRelatedExists, logger);
 
-    await excelHandler.addRow(
-      URLS_XLSX,
-      URLS_XLSX_WORKSHEET,
-      URLS_XLSX_TABLE,
-      [[date, url, new Date().toISOString()]],
-    );
-
     if (FASTLY_SERVICE_ID && FASTLY_TOKEN) {
       const fastly = new FastlyHandler({
         fastlyServiceId: FASTLY_SERVICE_ID,
@@ -568,6 +562,12 @@ async function main(params = {}) {
       logger.warn('Unable to create redirect, check FASTLY_SERVICE_ID and FASTLY_TOKEN');
     }
 
+    await excelHandler.addRow(
+      URLS_XLSX,
+      URLS_XLSX_WORKSHEET,
+      URLS_XLSX_TABLE,
+      [[date, url, new Date().toISOString()]],
+    );
 
     logger.info(`Process done in ${(new Date().getTime() - startTime) / 1000}s.`);
     return {
