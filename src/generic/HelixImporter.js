@@ -123,21 +123,43 @@ class HelixImporter {
             if (!isEmbed && src !== '' && file.contents.indexOf(src) !== -1) {
               let newSrc = '';
               if (!imageLocation) {
-                // copy resources (imgs...) to blob handler
-                let blob;
-                try {
-                  blob = await this.blobHandler.getBlob(encodeURI(src));
-                } catch (error) {
-                  // ignore non exiting images, otherwise throw an error
-                  if (error.message.indexOf('StatusCodeError: 404') === -1) {
-                    this.logger.error(`Cannot upload blob for ${src}: ${error.message}`);
-                    throw new Error(`Cannot upload blob for ${src}: ${error.message}`);
+                // copy img to blob handler
+
+                let usedCache = false;
+                if (this.cache) {
+                  // check first in local cache if image can be found
+                  const localAssets = path.resolve(`${this.cache}/assets`);
+                  const imgPath = new URL(src).pathname;
+                  const localPathToImg = path.resolve(`${localAssets}/${imgPath.replace(/\/files/gm, '').replace(/\/wp-content\/uploads/gm, '')}`);
+                  if (await fs.exists(localPathToImg)) {
+                    const buffer = await fs.readFile(localPathToImg);
+                    // eslint-disable-next-line max-len
+                    const resource = this.blobHandler.createExternalResource(buffer, null, null, localPathToImg);
+                    if (!this.blobHandler.checkBlobExists(resource)) {
+                      await this.blobHandler.upload(resource);
+                    }
+                    newSrc = resource.uri;
+                    usedCache = true;
                   }
                 }
-                if (blob) {
-                  newSrc = blob.uri;
-                } else {
-                  this.logger.warn(`Image could not be copied to blob handler: ${src}`);
+
+                if (!usedCache) {
+                  // use direct url
+                  let blob;
+                  try {
+                    blob = await this.blobHandler.getBlob(encodeURI(src));
+                  } catch (error) {
+                    // ignore non exiting images, otherwise throw an error
+                    if (error.message.indexOf('StatusCodeError: 404') === -1) {
+                      this.logger.error(`Cannot upload blob for ${src}: ${error.message}`);
+                      throw new Error(`Cannot upload blob for ${src}: ${error.message}`);
+                    }
+                  }
+                  if (blob) {
+                    newSrc = blob.uri;
+                  } else {
+                    this.logger.warn(`Image could not be copied to blob handler: ${src}`);
+                  }
                 }
               } else {
                 let response;
@@ -188,7 +210,7 @@ class HelixImporter {
                   newSrc = `/${newSrc}`;
                 }
               }
-              contents = contents.replace(new RegExp(`${src.replace('.', '\\.')}`, 'g'), newSrc);
+              contents = contents.replace(new RegExp(`${src.replace('.', '\\.')}`, 'gm'), newSrc);
             }
           });
         }
