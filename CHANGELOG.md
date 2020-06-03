@@ -1,3 +1,10 @@
+# [1.11.0](https://github.com/adobe/helix-theblog-importer/compare/v1.10.2...v1.11.0) (2020-06-03)
+
+
+### Features
+
+* **import:** use local cache if provided ([c493bc1](https://github.com/adobe/helix-theblog-importer/commit/c493bc1231b4530fc2dc2cb57514055d8ef7972b))
+
 ## [1.10.2](https://github.com/adobe/helix-theblog-importer/compare/v1.10.1...v1.10.2) (2020-05-28)
 
 
