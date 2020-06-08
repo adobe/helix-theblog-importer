@@ -54,7 +54,7 @@
     "hast-util-to-mdast": "7.1.1",
     "moment": "2.24.0",
     "path": "0.12.7",
-    "rehype-parse": "6.0.2",
+    "rehype-parse": "7.0.0",
     "rehype-remark": "8.0.0",
     "remark-stringify": "8.0.0",
     "request": "2.88.2",
