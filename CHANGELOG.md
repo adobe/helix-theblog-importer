@@ -1,3 +1,16 @@
+# [1.12.0](https://github.com/adobe/helix-theblog-importer/compare/v1.11.0...v1.12.0) (2020-06-08)
+
+
+### Bug Fixes
+
+* **deps:** pin dependencies ([#35](https://github.com/adobe/helix-theblog-importer/issues/35)) ([f348e21](https://github.com/adobe/helix-theblog-importer/commit/f348e217304132cc6a460b62d6f0dbe6002d1b7c))
+* **import:** spans lose spaces ([5796a03](https://github.com/adobe/helix-theblog-importer/commit/5796a0380f7fffac3a4c902db81aa67f9e5b9fcf))
+
+
+### Features
+
+* **import:** do not create assets in production ([5cd0084](https://github.com/adobe/helix-theblog-importer/commit/5cd0084060a18390079e63b174dd911523d68bd3))
+
 # [1.11.0](https://github.com/adobe/helix-theblog-importer/compare/v1.10.2...v1.11.0) (2020-06-03)
 
 
