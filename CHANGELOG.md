@@ -1,3 +1,10 @@
+## [1.12.1](https://github.com/adobe/helix-theblog-importer/compare/v1.12.0...v1.12.1) (2020-06-08)
+
+
+### Bug Fixes
+
+* **import:** move leading / trailing spaces outside of inline elements ([e7bb590](https://github.com/adobe/helix-theblog-importer/commit/e7bb590b9e656e9b795bf7f43ef60091ce28462b))
+
 # [1.12.0](https://github.com/adobe/helix-theblog-importer/compare/v1.11.0...v1.12.0) (2020-06-08)
 
 
