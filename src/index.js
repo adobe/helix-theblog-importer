@@ -1,3 +1,4 @@
+
 /*
  * Copyright 2020 Adobe. All rights reserved.
  * This file is licensed to you under the Apache License, Version 2.0 (the "License");
@@ -9,6 +10,7 @@
  * OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
+/* eslint-disable max-len */
 const { wrap } = require('@adobe/openwhisk-action-utils');
 const { logger: oLogger } = require('@adobe/openwhisk-action-logger');
 const { wrap: status } = require('@adobe/helix-status');
@@ -24,6 +26,7 @@ const sanitize = require('sanitize-filename');
 
 const HelixImporter = require('./generic/HelixImporter');
 const { asyncForEach } = require('./generic/utils');
+const { load: loadMappings } = require('./mappings');
 
 const OneDriveHandler = require('./handlers/OneDriveHandler');
 const FSHandler = require('./handlers/FSHandler');
@@ -207,26 +210,31 @@ async function handleBanner(node, $, importer, checkIfExists) {
   return `<hlxembed>/${OUTPUT_PATH}/${TYPE_BANNER}/${sanitize(bannerFilename)}.html</hlxembed>`;
 }
 
-async function handleTopics(importer, $, checkIfExists, logger) {
-  const mainTopic = escape($('[property="article:section"]').attr('content') || '');
+async function handleTopics(importer, $, checkIfExists, mappings, logger) {
+  let mainTopic = escape($('[property="article:section"]').attr('content') || '');
+  mainTopic = mainTopic ? mainTopic.trim().replace(/&amp;/g, '&') : '';
 
-  let topics = '';
+  let topics = [];
   $('.article-footer-topics-wrap .text').each((i, t) => {
-    const topic = $(t).html();
-    if (topic === mainTopic) {
-      // put first
-      topics = `${topic}, ${topics}`;
+    let topic = $(t).html();
+    topic = topic ? topic.trim().replace(/&amp;/g, '&') : null;
+    const topicLC = topic.toLowerCase();
+
+    if (topic && mappings.categories[topicLC]) {
+      if (topic === mainTopic) {
+        topics = mappings.categories[topicLC].concat(topics);
+      } else {
+        topics = topics.concat(mappings.categories[topicLC]);
+      }
     } else {
-      topics += `${topic}, `;
+      throw new Error(`Found an unmapped topic: ${topic}`);
     }
   });
 
-  topics = topics.slice(0, -2);
+  topics = topics.filter((t, i) => t && t.length > 0 && topics.indexOf(t) === i).map((t) => t.trim());
 
   await asyncForEach(
-    topics.split(',')
-      .filter((t) => t && t.length > 0)
-      .map((t) => t.trim()),
+    topics,
     async (t) => {
       const topicName = `${t.replace(/\s/gm, '-').replace(/&amp;/gm, '').toLowerCase()}`;
       if (!checkIfExists || !await importer.exists(`${OUTPUT_PATH}/${TYPE_TOPIC}`, topicName)) {
@@ -236,10 +244,10 @@ async function handleTopics(importer, $, checkIfExists, logger) {
     },
   );
 
-  return topics;
+  return topics.join(', ');
 }
 
-async function handleProducts(importer, $, checkIfExists, doCreateAssets, logger) {
+async function handleProducts(importer, $, checkIfExists, doCreateAssets, mappings, logger) {
   let output = '';
   const products = [];
   $('.sidebar-products-row .product-team-link').each((i, p) => {
@@ -316,7 +324,7 @@ function reviewInlineElements($, tagName) {
   }
 }
 
-async function doImport(importer, url, checkIfRelatedExists, doCreateAssets = false, logger) {
+async function doImport(importer, url, checkIfRelatedExists, doCreateAssets = false, mappings, logger) {
   const html = await importer.getPageContent(url);
 
   if (html && html !== '') {
@@ -358,9 +366,8 @@ async function doImport(importer, url, checkIfRelatedExists, doCreateAssets = fa
       previous = n.insertAfter(previous);
     });
 
-    const topics = await handleTopics(importer, $, checkIfRelatedExists, logger);
-    // eslint-disable-next-line max-len
-    const products = await handleProducts(importer, $, checkIfRelatedExists, doCreateAssets, logger);
+    const topics = await handleTopics(importer, $, checkIfRelatedExists, mappings, logger);
+    const products = await handleProducts(importer, $, checkIfRelatedExists, doCreateAssets, mappings, logger);
 
     const $topicsWrap = $('<p>');
     $topicsWrap.html(`Topics: ${topics}`);
@@ -479,7 +486,10 @@ async function main(params = {}) {
     localStorage,
     cache,
     doCreateAssets,
+    updateExcel = true,
   } = params;
+
+  let { mappings } = params;
 
   if (!url) {
     throw new Error('Missing url parameter');
@@ -546,6 +556,11 @@ async function main(params = {}) {
       }
     }
 
+    if (!mappings) {
+      // load the mappings
+      mappings = await loadMappings(excelHandler);
+    }
+
     const importer = new HelixImporter({
       storageHandler: handler,
       blobHandler: new BlobHandler({
@@ -562,7 +577,7 @@ async function main(params = {}) {
       cache,
     });
 
-    const date = await doImport(importer, url, checkIfRelatedExists, doCreateAssets, logger);
+    const date = await doImport(importer, url, checkIfRelatedExists, doCreateAssets, mappings, logger);
 
     if (FASTLY_SERVICE_ID && FASTLY_TOKEN) {
       const fastly = new FastlyHandler({
@@ -575,16 +590,19 @@ async function main(params = {}) {
       logger.warn('Unable to create redirect, check FASTLY_SERVICE_ID and FASTLY_TOKEN');
     }
 
-    await excelHandler.addRow(
-      URLS_XLSX,
-      URLS_XLSX_WORKSHEET,
-      URLS_XLSX_TABLE,
-      [[date, url, new Date().toISOString()]],
-    );
+    if (updateExcel) {
+      await excelHandler.addRow(
+        URLS_XLSX,
+        URLS_XLSX_WORKSHEET,
+        URLS_XLSX_TABLE,
+        [[date, url, new Date().toISOString()]],
+      );
+    }
 
     logger.info(`Process done in ${(new Date().getTime() - startTime) / 1000}s.`);
     return {
       body: `Successfully imported ${url}`,
+      data: [date, url, new Date().toISOString()],
       statusCode: 200,
     };
   } catch (error) {
