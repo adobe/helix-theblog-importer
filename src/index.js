@@ -313,11 +313,6 @@ function reviewInlineElements($, tagName) {
         $('<span> </span>').insertBefore($tag);
       }
     }
-    // if (tag.nextSibling && text && text.lastIndexOf(' ') === text.length - 1 && tag.nextSibling.type === 'text') {
-    //   // last character in the <tag> is a space and next sibling is a text
-    //   // -> space needs to be moved to the begining of next
-    //   tag.nextSibling.data = ` ${tag.nextSibling.data}`;
-    // }
   }
 }
 
