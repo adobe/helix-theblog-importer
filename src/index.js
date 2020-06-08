@@ -355,6 +355,7 @@ async function doImport(importer, url, checkIfRelatedExists, doCreateAssets = fa
     });
 
     const topics = await handleTopics(importer, $, checkIfRelatedExists, logger);
+    // eslint-disable-next-line max-len
     const products = await handleProducts(importer, $, checkIfRelatedExists, doCreateAssets, logger);
 
     const $topicsWrap = $('<p>');
