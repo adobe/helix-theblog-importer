@@ -399,6 +399,11 @@ async function doImport(importer, url, checkIfRelatedExists, doCreateAssets = fa
         // throw new Error('Unsupported embed - no src found');
         logger.warn(`Unsupported embed - could not resolve embed src in ${url}`);
       } else {
+        if (src.indexOf('//') === 0) {
+          // handle weird url starting with //
+          src = `https:${src}`;
+        }
+
         // replace children by "hlxembed" custom tag
         $node.children().remove();
         $node.append(`<hlxembed>${src}</hlxembed>`);
