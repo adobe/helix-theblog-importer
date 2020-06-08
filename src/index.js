@@ -291,23 +291,27 @@ function reviewInlineElements($, tagName) {
   for (let i = tags.length - 1; i >= 0; i -= 1) {
     const tag = tags[i];
     const $tag = $(tag);
-    const text = $(tag).text();
+    let text = $tag.text();
     if (tag.previousSibling) {
       const $previousSibling = $(tag.previousSibling);
       if (tag.previousSibling.tagName === tagName) {
         // previous sibling is an <tag>, merge current one inside the previous one
         $previousSibling.append($tag.html());
         $tag.remove();
-      } else if (text && text.indexOf(' ') === 0 && tag.previousSibling.type === 'text') {
-        // first character in the <tag> is a space and previous sibling is a text
-        // -> space needs to be moved to end of previous
-        tag.previousSibling.data = `${tag.previousSibling.data} `;
       }
     }
-    if (tag.nextSibling && text && text.lastIndexOf(' ') === text.length - 1 && tag.nextSibling.type === 'text') {
-      // last character in the <tag> is a space and next sibling is a text
-      // -> space needs to be moved to the begining of next
-      tag.nextSibling.data = ` ${tag.nextSibling.data}`;
+    if (text) {
+      if (text.lastIndexOf(' ') === text.length - 1) {
+        // move trailing space to a new text node outside of current element
+        text = $tag.text(text.slice(0, text.length - 1)).text();
+        $('<span> </span>').insertAfter($tag);
+      }
+
+      if (text.indexOf(' ') === 0) {
+        // move leading space to a new text node outside of current element
+        text = $tag.text(text.slice(1)).text();
+        $('<span> </span>').insertBefore($tag);
+      }
     }
   }
 }
@@ -419,10 +423,12 @@ async function doImport(importer, url, checkIfRelatedExists, doCreateAssets = fa
       $node.remove();
     });
 
-    // collaspe consecutive <em>, <strong>, <u>...
+    // collaspe consecutive <em>, <strong>, <u>, <i>...
     // and make sure they do not start / end with spaces while it is before / after some text
     reviewInlineElements($, 'em');
+    reviewInlineElements($, 'i');
     reviewInlineElements($, 'strong');
+    reviewInlineElements($, 'u');
 
     // remove author / products section
     $('.article-author-wrap').remove();
