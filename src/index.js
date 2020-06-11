@@ -323,7 +323,7 @@ async function handleProducts(importer, $, checkIfExists, doCreateAssets, mappin
   return output.filter((p, i) => p && p.length > 0 && output.lastIndexOf(p) === i).join(', ');
 }
 
-function reviewInlineElements($, tagName) {
+function reviewInlineElement($, tagName) {
   // collaspe consecutive <tag>
   // and make sure element does not start ends with spaces while it is before / after some text
   const tags = $(tagName).toArray();
@@ -468,10 +468,8 @@ async function doImport(importer, url, checkIfRelatedExists, doCreateAssets = fa
 
     // collaspe consecutive <em>, <strong>, <u>, <i>...
     // and make sure they do not start / end with spaces while it is before / after some text
-    reviewInlineElements($, 'em');
-    reviewInlineElements($, 'i');
-    reviewInlineElements($, 'strong');
-    reviewInlineElements($, 'u');
+
+    ['a', 'b', 'big', 'code', 'em', 'i', 'label', 's', 'small', 'span', 'strong', 'sub', 'sup', 'u', 'var'].forEach((tag) => reviewInlineElement($, tag));
 
     // remove author / products section
     $('.article-author-wrap').remove();
