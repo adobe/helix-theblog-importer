@@ -147,17 +147,26 @@ async function handleAuthor(importer, $, postedOn, checkIfExists) {
       $div.remove();
 
       // handle social list
-      // prepend "Social:" text
-      $2('<span>Social:</span>').insertBefore('.author-social-list');
-      $2('.author-social-list a').each((i, a) => {
-        const $a = $(a);
-        const href = $a.attr('href');
-        if (href) {
-          const split = new URL(href).hostname.split('.');
-          // add hostname as text (twitter, facebook...) to the link
-          $(a).text(split.length === 3 ? split[1] : split[0]);
-        }
-      });
+      if ($2('.author-social-list .author-social-item').length > 0) {
+        // prepend "Social:" text (only if links)
+        $2('<span>Social:</span>').insertBefore('.author-social-list');
+        $2('.author-social-list a').each((i, a) => {
+          const $a = $(a);
+          const href = $a.attr('href');
+          if (href) {
+            let text;
+            if (href.indexOf('twitter') !== -1) text = 'twitter';
+            if (href.indexOf('facebook') !== -1) text = 'facebook';
+            if (href.indexOf('linkedin') !== -1) text = 'linkedin';
+
+            if (text) {
+              $(a).text(text);
+            } else {
+              throw new Error(`Unknow social href type ${href}`);
+            }
+          }
+        });
+      }
 
       const content = $main.html();
       await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, authorFilename, content);
