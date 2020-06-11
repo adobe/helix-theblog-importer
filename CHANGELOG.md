@@ -1,3 +1,10 @@
+# [1.14.0](https://github.com/adobe/helix-theblog-importer/compare/v1.13.0...v1.14.0) (2020-06-11)
+
+
+### Features
+
+* **import:** cover more inline elements ([89f1a34](https://github.com/adobe/helix-theblog-importer/commit/89f1a349da9ef0064131c0ad6fb523d676a8acbd))
+
 # [1.13.0](https://github.com/adobe/helix-theblog-importer/compare/v1.12.2...v1.13.0) (2020-06-11)
 
 
