@@ -19,6 +19,7 @@ class ExcelHandler {
       clientId: opts.clientId,
       clientSecret: opts.clientSecret,
       refreshToken: opts.refreshToken,
+      log: this.logger,
     });
   }
 
