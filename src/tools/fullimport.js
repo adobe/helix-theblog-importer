@@ -17,6 +17,7 @@ const path = require('path');
 const CsvFile = require('./CsvFile');
 const ExcelHandler = require('../handlers/ExcelHandler');
 const { main: importer } = require('../index');
+const { load: loadMappings } = require('../mappings');
 
 const URLS_XLSX = '/importer/urls.xlsx';
 const URLS_XLSX_WORKSHEET = 'urls';
@@ -161,6 +162,9 @@ async function main(params = {}) {
         refreshToken: oneDriveRefreshToken,
         sharedLink: oneDriveAdminLink,
       });
+
+      // eslint-disable-next-line no-param-reassign
+      params.mappings = await loadMappings(excelHandler);
     } else {
       console.info('No OneDrive credentials provided');
       throw new Error('Missing OneDrive credentials');
@@ -194,7 +198,7 @@ main({
   AZURE_BLOB_URI: process.env.AZURE_BLOB_URI,
   FASTLY_TOKEN: process.env.FASTLY_TOKEN,
   FASTLY_SERVICE_ID: process.env.FASTLY_SERVICE_ID,
-  force: true,
+  force: false,
   checkIfRelatedExists: true,
   localStorage: './output',
   cache: './.cache',

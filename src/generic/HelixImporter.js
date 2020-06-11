@@ -120,7 +120,7 @@ class HelixImporter {
             const $img = $(img);
             const src = $img.attr('src');
             const isEmbed = $img.hasClass('hlx-embed');
-            if (!isEmbed && src !== '' && file.contents.indexOf(src) !== -1) {
+            if (!isEmbed && src && src !== '' && file.contents.indexOf(src) !== -1) {
               let newSrc = '';
               if (!imageLocation) {
                 // copy img to blob handler
@@ -135,7 +135,7 @@ class HelixImporter {
                     const buffer = await fs.readFile(localPathToImg);
                     // eslint-disable-next-line max-len
                     const resource = this.blobHandler.createExternalResource(buffer, null, null, localPathToImg);
-                    if (!this.blobHandler.checkBlobExists(resource)) {
+                    if (!await this.blobHandler.checkBlobExists(resource)) {
                       await this.blobHandler.upload(resource);
                     }
                     newSrc = resource.uri;

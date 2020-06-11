@@ -23,6 +23,12 @@ async function load(excelHandler) {
   const mappings = {
     categories: {},
     products: {},
+    productKeywords: {
+      photoshop: 'photoshop',
+      'adobe illustrator': 'illustrator',
+      'premiere pro': 'premiere pro',
+      'adobe premiere': 'premiere pro',
+    },
   };
 
   const categoryRows = await excelHandler.getRows(MAPPINGS_XLSX, MAPPINGS_XLSX_CATEGORIES_WORKSHEET, MAPPINGS_XLSX_CATEGORIES_TABLE);

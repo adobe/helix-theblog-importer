@@ -236,7 +236,7 @@ async function handleTopics(importer, $, checkIfExists, mappings, logger) {
   await asyncForEach(
     topics,
     async (t) => {
-      const topicName = `${t.replace(/\s/gm, '-').replace(/&amp;/gm, '').toLowerCase()}`;
+      const topicName = `${t.replace(/\s/gm, '-').replace(/&/gm, '').toLowerCase()}`;
       if (!checkIfExists || !await importer.exists(`${OUTPUT_PATH}/${TYPE_TOPIC}`, topicName)) {
         logger.info(`Found a new topic: ${topicName}`);
         await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_TOPIC}`, topicName, `<h1>${t}</h1>`);
@@ -248,39 +248,70 @@ async function handleTopics(importer, $, checkIfExists, mappings, logger) {
 }
 
 async function handleProducts(importer, $, checkIfExists, doCreateAssets, mappings, logger) {
-  let output = '';
+  let output = [];
   const products = [];
   $('.sidebar-products-row .product-team-link').each((i, p) => {
     const $p = $(p);
-    let { name } = path.parse($(p).attr('href'));
 
     const src = $p.find('img').attr('src');
-
-    // edge case, some link redirect to homepage, try to get product from image src
-    if (name === 'en') {
-      name = path.parse(src).name;
-    }
+    let { name } = path.parse(src);
 
     name = name.replace(/-/g, ' ').replace(/\b[a-z](?=[a-z]{2})/g, (letter) => letter.toUpperCase());
 
-    const fileName = name.replace(/\s/g, '-').toLowerCase();
-    products.push({
-      name,
-      fileName,
-      href: $p.attr('href'),
-      imgSrc: src,
-    });
-    output += `${name}, `;
+    let productMapping = mappings.products[name.toLowerCase()] || mappings.products[`adobe ${name.toLowerCase()}`];
+    if (!productMapping) {
+      // try with href
+      name = path.parse($(p).attr('href')).name;
+
+      // edge case, some link redirect to homepage, try to get product from image src
+      if (name === 'en') {
+        name = path.parse(src).name;
+      }
+
+      name = name.replace(/-/g, ' ').replace(/\b[a-z](?=[a-z]{2})/g, (letter) => letter.toUpperCase());
+
+      productMapping = mappings.products[name.toLowerCase()] || mappings.products[`adobe ${name.toLowerCase()}`];
+    }
+
+    if (productMapping) {
+      const fileName = productMapping[0].replace(/\s/g, '-').toLowerCase();
+      products.push({
+        name: productMapping[0],
+        fileName,
+        href: $p.attr('href'),
+        imgSrc: src,
+      });
+      output = productMapping.concat(output);
+    } else {
+      throw new Error(`Found an unmapped topic: ${name}`);
+    }
   });
 
-  output = output.slice(0, -2);
+  // keyword based search
+  const postBody = $('body').html().toLowerCase();
+  // eslint-disable-next-line no-restricted-syntax
+  for (const k in mappings.productKeywords) {
+    if (postBody.indexOf(k) !== -1 && output.indexOf(k) === -1) {
+      const productMapping = mappings.products[k];
+      if (productMapping) {
+        const fileName = productMapping[0].replace(/\s/g, '-').toLowerCase();
+        products.push({
+          name: productMapping[0],
+          fileName,
+        });
+        output = output.concat(productMapping);
+      } else {
+        throw new Error(`Found an unmapped topic (keyword search): ${k}`);
+      }
+    }
+  }
 
   await asyncForEach(
     products,
     async (p) => {
       if (!checkIfExists || !await importer.exists(`${OUTPUT_PATH}/${TYPE_PRODUCT}`, p.fileName)) {
         logger.info(`Found a new product: ${p.name}`);
-        let content = `<h1>${p.name}</h1><img src='${p.imgSrc}'>`;
+        let content = `<h1>${p.name}</h1><img src='${p.imgSrc || ''}'>`;
         if (p.href) {
           content = `<h1>${p.name}</h1><a href='${p.href}'><img src='${p.imgSrc}'></a>`;
         }
@@ -289,7 +320,7 @@ async function handleProducts(importer, $, checkIfExists, doCreateAssets, mappin
     },
   );
 
-  return output;
+  return output.filter((p, i) => p && p.length > 0 && output.lastIndexOf(p) === i).join(', ');
 }
 
 function reviewInlineElements($, tagName) {
