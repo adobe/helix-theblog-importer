@@ -151,19 +151,10 @@ async function handleAuthor(importer, $, postedOn, checkIfExists) {
         // prepend "Social:" text (only if links)
         $2('<span>Social:</span>').insertBefore('.author-social-list');
         $2('.author-social-list a').each((i, a) => {
-          const $a = $(a);
+          const $a = $2(a);
           const href = $a.attr('href');
           if (href) {
-            let text;
-            if (href.indexOf('twitter') !== -1) text = 'twitter';
-            if (href.indexOf('facebook') !== -1) text = 'facebook';
-            if (href.indexOf('linkedin') !== -1) text = 'linkedin';
-
-            if (text) {
-              $(a).text(text);
-            } else {
-              throw new Error(`Unknow social href type ${href}`);
-            }
+            $a.html(href);
           }
         });
       }
