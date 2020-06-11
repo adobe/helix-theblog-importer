@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/adobe/helix-theblog-importer/compare/v1.12.2...v1.13.0) (2020-06-11)
+
+
+### Features
+
+* **importer:** use mapping spreadsheet ([b9a022a](https://github.com/adobe/helix-theblog-importer/commit/b9a022a7e595c5f9f1b710f69bd2d199b25cb902))
+
 ## [1.12.2](https://github.com/adobe/helix-theblog-importer/compare/v1.12.1...v1.12.2) (2020-06-08)
 
 
