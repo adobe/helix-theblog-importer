@@ -468,10 +468,8 @@ async function doImport(importer, url, checkIfRelatedExists, doCreateAssets = fa
 
     // collaspe consecutive <em>, <strong>, <u>, <i>...
     // and make sure they do not start / end with spaces while it is before / after some text
-    reviewInlineElements($, 'em');
-    reviewInlineElements($, 'i');
-    reviewInlineElements($, 'strong');
-    reviewInlineElements($, 'u');
+
+    ['a', 'b', 'big', 'code', 'em', 'i', 'label', 's', 'small', 'span', 'strong', 'sub', 'sup', 'u', 'var'].forEach((tag) => reviewInlineElements($, tag));
 
     // remove author / products section
     $('.article-author-wrap').remove();
