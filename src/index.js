@@ -146,14 +146,15 @@ async function handleAuthor(importer, $, postedOn, checkIfExists) {
       $main.prepend(`<img src="${url}">`);
       $div.remove();
 
-      // handle social section
+      // handle social list
+      // prepend "Social:" text
       $2('<span>Social:</span>').insertBefore('.author-social-list');
       $2('.author-social-list a').each((i, a) => {
         const $a = $(a);
         const href = $a.attr('href');
         if (href) {
           const split = new URL(href).hostname.split('.');
-          // add hostname as text (twitter, facebook...)
+          // add hostname as text (twitter, facebook...) to the link
           $(a).text(split.length === 3 ? split[1] : split[0]);
         }
       });
