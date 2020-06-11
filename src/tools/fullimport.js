@@ -25,7 +25,7 @@ const URLS_XLSX_TABLE = 'listOfURLS';
 
 const IMPORT_BATCH_SIZE = 10;
 
-async function doImport(params, url) {
+async function doImport(params, url, dataset) {
   try {
     const result = await importer({
       url,
@@ -33,6 +33,7 @@ async function doImport(params, url) {
     });
     if (result.statusCode === 200) {
       console.debug(result.body);
+      dataset.push(result.data);
       return true;
     }
     if (result.body.indexOf('301') !== -1) {
@@ -55,8 +56,9 @@ async function doImport(params, url) {
   }
 }
 
-async function doScan(params, scanned) {
-  let countImported = 0;
+async function doScan(params, scanned, excelHandler) {
+  let countSuccess = 0;
+  let countError = 0;
   let countTotal = 0;
   const urlsToImport = [];
 
@@ -77,22 +79,35 @@ async function doScan(params, scanned) {
 
   let batch = urlsToImport.slice(0, IMPORT_BATCH_SIZE);
   let round = 0;
+  const fullDataSet = [];
   while (batch.length > 0) {
     round += 1;
     // eslint-disable-next-line no-await-in-loop, no-loop-func
     await Promise.all(batch.map(async (u) => {
       console.log(`Importing ${u}`);
-      if (await doImport(params, u)) {
-        countImported += 1;
+      if (await doImport(params, u, fullDataSet)) {
+        countSuccess += 1;
+      } else {
+        countError += 1;
       }
     }));
     const newIndex = IMPORT_BATCH_SIZE * round;
     batch = urlsToImport.slice(newIndex, newIndex + IMPORT_BATCH_SIZE);
 
-    console.log(`Import progress: ${countImported}/${urlsToImport.length}`);
+    console.log(`Import progress: ${countSuccess + countError}/${urlsToImport.length} (${countSuccess}/${countError})`);
   }
 
-  return countImported;
+  if (fullDataSet.length > 0) {
+    await excelHandler.addRow(
+      URLS_XLSX,
+      URLS_XLSX_WORKSHEET,
+      URLS_XLSX_TABLE,
+      fullDataSet,
+    );
+  }
+
+
+  return countSuccess;
 }
 
 /**
@@ -178,6 +193,7 @@ async function main(params = {}) {
       rows.value.map(
         (r) => (r.values.length > 0 && r.values[0].length > 1 ? r.values[0][1] : null),
       ),
+      excelHandler,
     );
 
     console.log();
@@ -200,6 +216,8 @@ main({
   FASTLY_SERVICE_ID: process.env.FASTLY_SERVICE_ID,
   force: false,
   checkIfRelatedExists: true,
+  doCreateAssets: true,
   localStorage: './output',
   cache: './.cache',
+  updateExcel: false,
 });

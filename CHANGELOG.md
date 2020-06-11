@@ -1,3 +1,10 @@
+## [1.12.2](https://github.com/adobe/helix-theblog-importer/compare/v1.12.1...v1.12.2) (2020-06-08)
+
+
+### Bug Fixes
+
+* **import:** embed invalid urls ([327f3c1](https://github.com/adobe/helix-theblog-importer/commit/327f3c131c85cab53fcc3f62628c7190b4f05b3e))
+
 ## [1.12.1](https://github.com/adobe/helix-theblog-importer/compare/v1.12.0...v1.12.1) (2020-06-08)
 
 
