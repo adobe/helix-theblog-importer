@@ -235,9 +235,10 @@ async function handleTopics(importer, $, checkIfExists, mappings, logger) {
 
     if (topic && mappings.categories[topicLC]) {
       if (topic === mainTopic) {
-        topics = mappings.categories[topicLC].concat(topics);
+        // add first
+        topics.unshift(0, mappings.categories[topicLC][0]);
       } else {
-        topics = topics.concat(mappings.categories[topicLC]);
+        topics.push(mappings.categories[topicLC][0]);
       }
     } else {
       throw new Error(`Found an unmapped topic: ${topic}`);
@@ -294,7 +295,7 @@ async function handleProducts(importer, $, checkIfExists, doCreateAssets, mappin
         href: $p.attr('href'),
         imgSrc: src,
       });
-      output = productMapping.concat(output);
+      output.push(productMapping[0]);
     } else {
       throw new Error(`Found an unmapped topic: ${name}`);
     }
