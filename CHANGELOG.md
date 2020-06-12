@@ -1,3 +1,10 @@
+# [1.15.0](https://github.com/adobe/helix-theblog-importer/compare/v1.14.0...v1.15.0) (2020-06-12)
+
+
+### Features
+
+* **import:** social link list ([acfaf9b](https://github.com/adobe/helix-theblog-importer/commit/acfaf9b756e32eb5b7cb78f44dd4daf06b510fec))
+
 # [1.14.0](https://github.com/adobe/helix-theblog-importer/compare/v1.13.0...v1.14.0) (2020-06-11)
 
 
