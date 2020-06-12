@@ -1,3 +1,10 @@
+# [1.16.0](https://github.com/adobe/helix-theblog-importer/compare/v1.15.0...v1.16.0) (2020-06-12)
+
+
+### Features
+
+* **import:** keep only topic leafs ([f003746](https://github.com/adobe/helix-theblog-importer/commit/f00374646d6485bd0066258dd9d5451d1b1079da))
+
 # [1.15.0](https://github.com/adobe/helix-theblog-importer/compare/v1.14.0...v1.15.0) (2020-06-12)
 
 
