@@ -146,6 +146,19 @@ async function handleAuthor(importer, $, postedOn, checkIfExists) {
       $main.prepend(`<img src="${url}">`);
       $div.remove();
 
+      // handle social list
+      if ($2('.author-social-list .author-social-item').length > 0) {
+        // prepend "Social:" text (only if links)
+        $2('<span>Social:</span>').insertBefore('.author-social-list');
+        $2('.author-social-list a').each((i, a) => {
+          const $a = $2(a);
+          const href = $a.attr('href');
+          if (href) {
+            $a.html(href);
+          }
+        });
+      }
+
       const content = $main.html();
       await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, authorFilename, content);
     }
