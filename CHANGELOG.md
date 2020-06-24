@@ -1,3 +1,10 @@
+# [1.19.0](https://github.com/adobe/helix-theblog-importer/compare/v1.18.0...v1.19.0) (2020-06-24)
+
+
+### Features
+
+* **import:** use IP instead of domain name ([970d5f9](https://github.com/adobe/helix-theblog-importer/commit/970d5f99f859c7d00f5fadbda73df9045e264495))
+
 # [1.18.0](https://github.com/adobe/helix-theblog-importer/compare/v1.17.0...v1.18.0) (2020-06-24)
 
 
