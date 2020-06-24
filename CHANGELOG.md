@@ -1,3 +1,24 @@
+# [1.18.0](https://github.com/adobe/helix-theblog-importer/compare/v1.17.0...v1.18.0) (2020-06-24)
+
+
+### Features
+
+* **import:** prod config for importer ([55dd5f9](https://github.com/adobe/helix-theblog-importer/commit/55dd5f9be36a2128ee296018da00281df7cac2ba))
+
+# [1.17.0](https://github.com/adobe/helix-theblog-importer/compare/v1.16.1...v1.17.0) (2020-06-24)
+
+
+### Features
+
+* **import:** catch more errors ([d149b27](https://github.com/adobe/helix-theblog-importer/commit/d149b271b7f35ce2822b0c8cd029c38581a05d86))
+
+## [1.16.1](https://github.com/adobe/helix-theblog-importer/compare/v1.16.0...v1.16.1) (2020-06-24)
+
+
+### Bug Fixes
+
+* **import:** remove anti-hero div for legacy design ([#64](https://github.com/adobe/helix-theblog-importer/issues/64)) ([0780782](https://github.com/adobe/helix-theblog-importer/commit/07807821abbb9b24cdc00f2338e75a9c99eac449))
+
 # [1.16.0](https://github.com/adobe/helix-theblog-importer/compare/v1.15.0...v1.16.0) (2020-06-12)
 
 
