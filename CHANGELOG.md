@@ -1,3 +1,10 @@
+# [1.18.0](https://github.com/adobe/helix-theblog-importer/compare/v1.17.0...v1.18.0) (2020-06-24)
+
+
+### Features
+
+* **import:** prod config for importer ([55dd5f9](https://github.com/adobe/helix-theblog-importer/commit/55dd5f9be36a2128ee296018da00281df7cac2ba))
+
 # [1.17.0](https://github.com/adobe/helix-theblog-importer/compare/v1.16.1...v1.17.0) (2020-06-24)
 
 
