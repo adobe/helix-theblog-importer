@@ -404,6 +404,9 @@ async function doImport(importer, url, checkIfRelatedExists, doCreateAssets = fa
     // add a thematic break after hero banner
     const $heroHr = $('<hr>').insertAfter($('.article-hero'));
 
+    // remove anti-hero (legacy design)
+    $('.anti-hero').remove();
+
     $('<hr>').insertAfter($heroHr);
     const nodes = await handleAuthor(importer, $, postedOn, checkIfRelatedExists, logger);
     let previous = $heroHr;
