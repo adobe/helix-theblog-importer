@@ -1,3 +1,10 @@
+## [1.16.1](https://github.com/adobe/helix-theblog-importer/compare/v1.16.0...v1.16.1) (2020-06-24)
+
+
+### Bug Fixes
+
+* **import:** remove anti-hero div for legacy design ([#64](https://github.com/adobe/helix-theblog-importer/issues/64)) ([0780782](https://github.com/adobe/helix-theblog-importer/commit/07807821abbb9b24cdc00f2338e75a9c99eac449))
+
 # [1.16.0](https://github.com/adobe/helix-theblog-importer/compare/v1.15.0...v1.16.0) (2020-06-12)
 
 
