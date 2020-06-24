@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/adobe/helix-theblog-importer/compare/v1.16.1...v1.17.0) (2020-06-24)
+
+
+### Features
+
+* **import:** catch more errors ([d149b27](https://github.com/adobe/helix-theblog-importer/commit/d149b271b7f35ce2822b0c8cd029c38581a05d86))
+
 ## [1.16.1](https://github.com/adobe/helix-theblog-importer/compare/v1.16.0...v1.16.1) (2020-06-24)
 
 
