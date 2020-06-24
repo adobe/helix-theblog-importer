@@ -107,120 +107,118 @@ class HelixImporter {
         };
       });
 
-    processor.process(content)
-      .then(async (file) => {
-        const p = `${directory}/${sanitizedName}.md`;
-        let { contents } = file;
+    const file = await processor.process(content);
+    const p = `${directory}/${sanitizedName}.md`;
+    let { contents } = file;
 
-        // process image links
-        const $ = cheerio.load(content);
-        const imgs = $('img');
-        if (imgs && imgs.length > 0) {
-          await asyncForEach(imgs, async (img, index) => {
-            const $img = $(img);
-            const src = $img.attr('src');
-            const isEmbed = $img.hasClass('hlx-embed');
-            if (!isEmbed && src && src !== '' && file.contents.indexOf(src) !== -1) {
-              let newSrc = '';
-              if (!imageLocation) {
-                // copy img to blob handler
+    // process image links
+    const $ = cheerio.load(content);
+    const imgs = $('img');
+    if (imgs && imgs.length > 0) {
+      await asyncForEach(imgs, async (img, index) => {
+        const $img = $(img);
+        const src = $img.attr('src');
+        const isEmbed = $img.hasClass('hlx-embed');
+        if (!isEmbed && src && src !== '' && file.contents.indexOf(src) !== -1) {
+          let newSrc = '';
+          if (!imageLocation) {
+            // copy img to blob handler
 
-                let usedCache = false;
-                if (this.cache) {
-                  // check first in local cache if image can be found
-                  const localAssets = path.resolve(`${this.cache}/assets`);
-                  const imgPath = new URL(src).pathname;
-                  const localPathToImg = path.resolve(`${localAssets}/${imgPath.replace(/\/files/gm, '').replace(/\/wp-content\/uploads/gm, '')}`);
-                  if (await fs.exists(localPathToImg)) {
-                    const buffer = await fs.readFile(localPathToImg);
-                    // eslint-disable-next-line max-len
-                    const resource = this.blobHandler.createExternalResource(buffer, null, null, localPathToImg);
-                    if (!await this.blobHandler.checkBlobExists(resource)) {
-                      await this.blobHandler.upload(resource);
-                    }
-                    newSrc = resource.uri;
-                    usedCache = true;
-                  }
+            let usedCache = false;
+            if (this.cache) {
+              // check first in local cache if image can be found
+              const localAssets = path.resolve(`${this.cache}/assets`);
+              const imgPath = new URL(src).pathname;
+              const localPathToImg = path.resolve(`${localAssets}/${imgPath.replace(/\/files/gm, '').replace(/\/wp-content\/uploads/gm, '')}`);
+              if (await fs.exists(localPathToImg)) {
+                const buffer = await fs.readFile(localPathToImg);
+                // eslint-disable-next-line max-len
+                const resource = this.blobHandler.createExternalResource(buffer, null, null, localPathToImg);
+                if (!await this.blobHandler.checkBlobExists(resource)) {
+                  await this.blobHandler.upload(resource);
                 }
+                newSrc = resource.uri;
+                usedCache = true;
+              }
+            }
 
-                if (!usedCache) {
-                  // use direct url
-                  let blob;
-                  try {
-                    blob = await this.blobHandler.getBlob(encodeURI(src));
-                  } catch (error) {
-                    // ignore non exiting images, otherwise throw an error
-                    if (error.message.indexOf('StatusCodeError: 404') === -1) {
-                      this.logger.error(`Cannot upload blob for ${src}: ${error.message}`);
-                      throw new Error(`Cannot upload blob for ${src}: ${error.message}`);
-                    }
-                  }
-                  if (blob) {
-                    newSrc = blob.uri;
-                  } else {
-                    this.logger.warn(`Image could not be copied to blob handler: ${src}`);
-                  }
-                }
-              } else {
-                let response;
-                try {
-                  response = await rp({
-                    uri: src,
-                    timeout: 60000,
-                    followRedirect: true,
-                    encoding: null,
-                    resolveWithFullResponse: true,
-                  });
-                } catch (error) {
-                  // ignore 404 images but throw an error for other issues
-                  if (error.statusCode !== 404) {
-                    this.logger.error(`Cannot download image for ${src}: ${error.message}`);
-                    throw new Error(`Cannot download image for ${src}: ${error.message}`);
-                  }
-                }
-
-                if (response) {
-                  let { ext } = path.parse(src);
-                  if (!ext) {
-                    const dispo = response.headers['content-disposition'];
-                    if (dispo) {
-                      // content-disposition:"inline; filename="xyz.jpeg""
-                      try {
-                        // eslint-disable-next-line prefer-destructuring
-                        ext = `.${dispo.match(/\.(.*)"/)[1]}`;
-                      } catch (e) {
-                        this.logger.warn(`Cannot find extension for ${src} with content-disposition`);
-                      }
-                    } else {
-                      // use content-type
-                      const type = response.headers['content-type'];
-                      try {
-                        // eslint-disable-next-line prefer-destructuring
-                        ext = `.${type.match(/\/(.*)/)[1]}`;
-                      } catch (e) {
-                        this.logger.warn(`Cannot find an extension for ${src} with content-type`);
-                      }
-                    }
-                  }
-                  const imgName = `${sanitizedName}${index > 0 ? `-${index}` : ''}${ext}`;
-                  newSrc = `${imageLocation}/${imgName}`;
-                  await this.storageHandler.put(newSrc, response.body);
-                  this.logger.info(`Image file created: ${newSrc}`);
-                  // absolute link
-                  newSrc = `/${newSrc}`;
+            if (!usedCache) {
+              // use direct url
+              let blob;
+              try {
+                blob = await this.blobHandler.getBlob(encodeURI(src));
+              } catch (error) {
+                // ignore non exiting images, otherwise throw an error
+                if (error.message.indexOf('StatusCodeError: 404') === -1) {
+                  this.logger.error(`Cannot upload blob for ${src}: ${error.message}`);
+                  throw new Error(`Cannot upload blob for ${src}: ${error.message}`);
                 }
               }
-              contents = contents.replace(new RegExp(`${src.replace('.', '\\.')}`, 'gm'), newSrc);
+              if (blob) {
+                newSrc = blob.uri;
+              } else {
+                this.logger.warn(`Image could not be copied to blob handler: ${src}`);
+              }
             }
-          });
-        }
-        if (prepend) {
-          contents = prepend + contents;
-        }
+          } else {
+            let response;
+            try {
+              response = await rp({
+                uri: src,
+                timeout: 60000,
+                followRedirect: true,
+                encoding: null,
+                resolveWithFullResponse: true,
+              });
+            } catch (error) {
+              // ignore 404 images but throw an error for other issues
+              if (error.statusCode !== 404) {
+                this.logger.error(`Cannot download image for ${src}: ${error.message}`);
+                throw new Error(`Cannot download image for ${src}: ${error.message}`);
+              }
+            }
 
-        await this.storageHandler.put(p, contents);
-        this.logger.info(`MD file created: ${p}`);
+            if (response) {
+              let { ext } = path.parse(src);
+              if (!ext) {
+                const dispo = response.headers['content-disposition'];
+                if (dispo) {
+                  // content-disposition:"inline; filename="xyz.jpeg""
+                  try {
+                    // eslint-disable-next-line prefer-destructuring
+                    ext = `.${dispo.match(/\.(.*)"/)[1]}`;
+                  } catch (e) {
+                    this.logger.warn(`Cannot find extension for ${src} with content-disposition`);
+                  }
+                } else {
+                  // use content-type
+                  const type = response.headers['content-type'];
+                  try {
+                    // eslint-disable-next-line prefer-destructuring
+                    ext = `.${type.match(/\/(.*)/)[1]}`;
+                  } catch (e) {
+                    this.logger.warn(`Cannot find an extension for ${src} with content-type`);
+                  }
+                }
+              }
+              const imgName = `${sanitizedName}${index > 0 ? `-${index}` : ''}${ext}`;
+              newSrc = `${imageLocation}/${imgName}`;
+              await this.storageHandler.put(newSrc, response.body);
+              this.logger.info(`Image file created: ${newSrc}`);
+              // absolute link
+              newSrc = `/${newSrc}`;
+            }
+          }
+          contents = contents.replace(new RegExp(`${src.replace('.', '\\.')}`, 'gm'), newSrc);
+        }
       });
+    }
+    if (prepend) {
+      contents = prepend + contents;
+    }
+
+    await this.storageHandler.put(p, contents);
+    this.logger.info(`MD file created: ${p}`);
   }
 
   async exists(directory, name) {
