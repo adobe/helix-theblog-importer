@@ -36,7 +36,7 @@ const FastlyHandler = require('./handlers/FastlyHandler');
 const OUTPUT_PATH = 'en';
 
 const TYPE_AUTHOR = 'authors';
-const TYPE_POST = 'drafts/migrated';
+const TYPE_POST = 'publish';
 const TYPE_TOPIC = 'topics';
 const TYPE_PRODUCT = 'products';
 const TYPE_BANNER = 'promotions';
@@ -518,7 +518,7 @@ async function main(params = {}) {
   const {
     url,
     force,
-    checkIfRelatedExists,
+    checkIfRelatedExists = true,
     __ow_logger: logger,
     AZURE_BLOB_SAS: azureBlobSAS,
     AZURE_BLOB_URI: azureBlobURI,
