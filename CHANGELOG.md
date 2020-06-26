@@ -1,3 +1,10 @@
+# [1.20.0](https://github.com/adobe/helix-theblog-importer/compare/v1.19.0...v1.20.0) (2020-06-26)
+
+
+### Features
+
+* **import:** default to force to be able to re-import ([f3ba893](https://github.com/adobe/helix-theblog-importer/commit/f3ba893f411b497d09ad8ea7c52b94fe51c18704))
+
 # [1.19.0](https://github.com/adobe/helix-theblog-importer/compare/v1.18.0...v1.19.0) (2020-06-24)
 
 
