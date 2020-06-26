@@ -517,7 +517,7 @@ async function main(params = {}) {
   const startTime = new Date().getTime();
   const {
     url,
-    force,
+    force = true,
     checkIfRelatedExists = true,
     __ow_logger: logger,
     AZURE_BLOB_SAS: azureBlobSAS,
