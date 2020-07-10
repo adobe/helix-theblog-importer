@@ -1,3 +1,10 @@
+# [1.21.0](https://github.com/adobe/helix-theblog-importer/compare/v1.20.0...v1.21.0) (2020-07-10)
+
+
+### Features
+
+* **import:** decode filename ([37606a2](https://github.com/adobe/helix-theblog-importer/commit/37606a2ae4bc7f54853e09590bcbc6b6198f0f75))
+
 # [1.20.0](https://github.com/adobe/helix-theblog-importer/compare/v1.19.0...v1.20.0) (2020-06-26)
 
 
