@@ -68,7 +68,7 @@ class HelixImporter {
   }
 
   async createMarkdownFile(directory, name, content, prepend, imageLocation) {
-    const sanitizedName = sanitize(name);
+    const sanitizedName = sanitize(decodeURIComponent(name));
     this.logger.info(`Creating a new MD file: ${directory}/${sanitizedName}.md`);
 
     const processor = unified()
