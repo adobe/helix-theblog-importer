@@ -129,7 +129,7 @@ async function handleAuthor(importer, $, postedOn, checkIfExists) {
   nodes.push($('<p>').append(`by ${postedBy}`));
   nodes.push($('<p>').append(postedOn));
 
-  const authorFilename = postedBy.toLowerCase().trim().replace(/\s/g, '-');
+  const authorFilename = importer.sanitizeFilename(postedBy);
 
   if (authorFilename && authorFilename !== '' && (!checkIfExists || !await importer.exists(`${OUTPUT_PATH}/${TYPE_AUTHOR}`, authorFilename))) {
     const html = await importer.getPageContent(authorLink);
@@ -177,7 +177,7 @@ async function handleBanner(node, $, importer, checkIfExists) {
   const title = node.find('h2').text();
 
   // use title if available or fallback to name in the href
-  const bannerFilename = title ? title.toLowerCase().trim().replace(/\s/g, '-') : path.parse(href).name;
+  const bannerFilename = importer.sanitizeFilename(title || path.parse(href).name);
 
   if (bannerFilename !== '' && (!checkIfExists || !await importer.exists(`${OUTPUT_PATH}/${TYPE_BANNER}`, bannerFilename))) {
     const content = [];
@@ -250,7 +250,7 @@ async function handleTopics(importer, $, checkIfExists, mappings, logger) {
   await asyncForEach(
     topics,
     async (t) => {
-      const topicName = `${t.replace(/\s/gm, '-').replace(/&/gm, '').toLowerCase()}`;
+      const topicName = importer.sanitizeFilename(t);
       if (!checkIfExists || !await importer.exists(`${OUTPUT_PATH}/${TYPE_TOPIC}`, topicName)) {
         logger.info(`Found a new topic: ${topicName}`);
         await importer.createMarkdownFile(`${OUTPUT_PATH}/${TYPE_TOPIC}`, topicName, `<h1>${t}</h1>`);
@@ -308,7 +308,7 @@ async function handleProducts(importer, $, checkIfExists, doCreateAssets, mappin
     if (postBody.indexOf(k) !== -1 && output.indexOf(k) === -1) {
       const productMapping = mappings.products[k];
       if (productMapping) {
-        const fileName = productMapping[0].replace(/\s/g, '-').toLowerCase();
+        const fileName = importer.sanitizeFilename(productMapping[0]);
         products.push({
           name: productMapping[0],
           fileName,
