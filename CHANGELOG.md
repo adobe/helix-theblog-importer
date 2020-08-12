@@ -1,3 +1,10 @@
+# [1.23.0](https://github.com/adobe/helix-theblog-importer/compare/v1.22.0...v1.23.0) (2020-08-12)
+
+
+### Features
+
+* **import:** avoid redirect ([db310ae](https://github.com/adobe/helix-theblog-importer/commit/db310ae3896424d22d502420264d322ccb5aa332))
+
 # [1.22.0](https://github.com/adobe/helix-theblog-importer/compare/v1.21.1...v1.22.0) (2020-08-12)
 
 
