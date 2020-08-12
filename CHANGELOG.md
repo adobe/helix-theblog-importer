@@ -1,3 +1,10 @@
+# [1.22.0](https://github.com/adobe/helix-theblog-importer/compare/v1.21.1...v1.22.0) (2020-08-12)
+
+
+### Features
+
+* **import:** better filename sanitization and existance check ([#81](https://github.com/adobe/helix-theblog-importer/issues/81)) ([1b5ac18](https://github.com/adobe/helix-theblog-importer/commit/1b5ac18c8d5080e70221f5b33808e030f61a8818))
+
 ## [1.21.1](https://github.com/adobe/helix-theblog-importer/compare/v1.21.0...v1.21.1) (2020-08-12)
 
 
