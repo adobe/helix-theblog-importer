@@ -1,3 +1,10 @@
+## [1.21.1](https://github.com/adobe/helix-theblog-importer/compare/v1.21.0...v1.21.1) (2020-08-12)
+
+
+### Bug Fixes
+
+* **ci:** trigger a new clean release ([d9772c1](https://github.com/adobe/helix-theblog-importer/commit/d9772c15c271882b342a43d640243f5419e90326))
+
 # [1.21.0](https://github.com/adobe/helix-theblog-importer/compare/v1.20.0...v1.21.0) (2020-07-10)
 
 
