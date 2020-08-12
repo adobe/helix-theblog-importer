@@ -23,11 +23,11 @@ const cheerio = require('cheerio');
 
 const { asyncForEach } = require('./utils');
 
-const DOMAIN = 'theblog.adobe.com';
+const HOST = 'theblog.adobe.com';
 const IP = '192.40.113.16';
 
 function getIPURL(url) {
-  return url.replace(DOMAIN, IP);
+  return url.replace(HOST, IP);
 }
 
 class HelixImporter {
@@ -54,6 +54,9 @@ class HelixImporter {
         timeout: 60000,
         followRedirect: false,
         rejectUnauthorized: false,
+        headers: {
+          Host: HOST,
+        },
       });
       if (this.useCache) {
         const localPath = path.resolve(this.cache, `${new URL(url).pathname.replace(/\//gm, '')}.html`);
@@ -178,6 +181,9 @@ class HelixImporter {
                 encoding: null,
                 resolveWithFullResponse: true,
                 rejectUnauthorized: false,
+                headers: {
+                  Host: HOST,
+                },
               });
             } catch (error) {
               // ignore 404 images but throw an error for other issues
