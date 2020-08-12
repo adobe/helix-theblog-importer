@@ -68,7 +68,7 @@ class HelixImporter {
   }
 
   async createMarkdownFile(directory, name, content, prepend, imageLocation) {
-    const sanitizedName = sanitize(decodeURIComponent(name));
+    const sanitizedName = this.sanitizeFilename(name);
     this.logger.info(`Creating a new MD file: ${directory}/${sanitizedName}.md`);
 
     const processor = unified()
@@ -230,10 +230,26 @@ class HelixImporter {
     this.logger.info(`MD file created: ${p}`);
   }
 
+  // eslint-disable-next-line class-methods-use-this
+  sanitizeFilename(name) {
+    return sanitize(decodeURIComponent(name))
+      .trim()
+      .toLowerCase()
+      .replace(/\./gm, '')
+      .replace(/&/gm, '')
+      .replace(/\s/g, '-');
+  }
+
   async exists(directory, name) {
-    const sanitizedName = sanitize(name);
-    this.logger.info(`Checking if MD file exists: ${directory}/${sanitizedName}.md`);
-    const p = `${directory}/${sanitizedName}.md`;
+    const sanitizedName = this.sanitizeFilename(name);
+
+    let p = `${directory}/${sanitizedName}.docx`;
+
+    this.logger.info(`Checking if DOCX file exists: ${p}`);
+    if (await this.storageHandler.exists(p)) return true;
+
+    p = `${directory}/${sanitizedName}.md`;
+    this.logger.info(`Checking if MD file exists: ${p}`);
     return this.storageHandler.exists(p);
   }
 }
