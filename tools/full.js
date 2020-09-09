@@ -181,7 +181,7 @@ async function main(params = {}) {
       });
 
       // eslint-disable-next-line no-param-reassign
-      params.mappings = await loadMappings(excelHandler);
+      params.mappings = await loadMappings(excelHandler, params);
     } else {
       console.info('No OneDrive credentials provided');
       throw new Error('Missing OneDrive credentials');
@@ -222,4 +222,13 @@ main({
   localStorage: './output',
   cache: './.cache',
   updateExcel: false,
+  SP_URLS_XLSX: process.env.SP_URLS_XLSX,
+  SP_URLS_XLSX_WORKSHEET: process.env.SP_URLS_XLSX_WORKSHEET,
+  SP_URLS_XLSX_TABLE: process.env.SP_URLS_XLSX_TABLE,
+  SP_MAPPINGS_XLSX: process.env.SP_MAPPINGS_XLSX,
+  SP_MAPPINGS_XLSX_CATEGORIES_WORKSHEET: process.env.SP_MAPPINGS_XLSX_CATEGORIES_WORKSHEET,
+  SP_MAPPINGS_XLSX_CATEGORIES_TABLE: process.env.SP_MAPPINGS_XLSX_CATEGORIES_TABLE,
+  SP_MAPPINGS_XLSX_PRODUCTS_WORKSHEET: process.env.SP_MAPPINGS_XLSX_PRODUCTS_WORKSHEET,
+  SP_MAPPINGS_XLSX_PRODUCTS_TABLE: process.env.SP_MAPPINGS_XLSX_PRODUCTS_TABLE,
+
 });

@@ -11,15 +11,15 @@
  */
 /* eslint-disable max-len */
 
-const MAPPINGS_XLSX = '/importer/mappings.xlsx';
+async function load(excelHandler, params) {
+  const {
+    SP_MAPPINGS_XLSX: spMappingsXlsx,
+    SP_MAPPINGS_XLSX_CATEGORIES_WORKSHEET: spMappingsXlsxCategoriesWorksheet,
+    SP_MAPPINGS_XLSX_CATEGORIES_TABLE: spMappingsXlsxCategoriesTable,
+    SP_MAPPINGS_XLSX_PRODUCTS_WORKSHEET: spMappingsXlsxProductsWorksheet,
+    SP_MAPPINGS_XLSX_PRODUCTS_TABLE: spMappingsXlsxProductsTable,
+  } = params;
 
-const MAPPINGS_XLSX_CATEGORIES_WORKSHEET = 'Migration - Topic to Category';
-const MAPPINGS_XLSX_CATEGORIES_TABLE = 'categories';
-
-const MAPPINGS_XLSX_PRODUCTS_WORKSHEET = 'Migration - Products';
-const MAPPINGS_XLSX_PRODUCTS_TABLE = 'products';
-
-async function load(excelHandler) {
   const mappings = {
     categories: {},
     products: {},
@@ -31,7 +31,7 @@ async function load(excelHandler) {
     },
   };
 
-  const categoryRows = await excelHandler.getRows(MAPPINGS_XLSX, MAPPINGS_XLSX_CATEGORIES_WORKSHEET, MAPPINGS_XLSX_CATEGORIES_TABLE);
+  const categoryRows = await excelHandler.getRows(spMappingsXlsx, spMappingsXlsxCategoriesWorksheet, spMappingsXlsxCategoriesTable);
   categoryRows.value.forEach((row) => {
     if (row && row.values && row.values.length > 0 && row.values[0].length > 1) {
       const category = row.values[0];
@@ -49,7 +49,7 @@ async function load(excelHandler) {
     }
   });
 
-  const productsRows = await excelHandler.getRows(MAPPINGS_XLSX, MAPPINGS_XLSX_PRODUCTS_WORKSHEET, MAPPINGS_XLSX_PRODUCTS_TABLE);
+  const productsRows = await excelHandler.getRows(spMappingsXlsx, spMappingsXlsxProductsWorksheet, spMappingsXlsxProductsTable);
   productsRows.value.forEach((row) => {
     if (row && row.values && row.values.length > 0 && row.values[0].length > 1) {
       const product = row.values[0];
