@@ -24,14 +24,14 @@ const path = require('path');
 const rp = require('request-promise-native');
 const sanitize = require('sanitize-filename');
 
-const HelixImporter = require('./generic/HelixImporter');
-const { asyncForEach } = require('./generic/utils');
-const { load: loadMappings } = require('./mappings');
+const HelixImporter = require('@adobe/helix-importer/src/generic/HelixImporter');
+const { asyncForEach } = require('@adobe/helix-importer/src/generic/utils');
+const OneDriveHandler = require('@adobe/helix-importer/src/handlers/OneDriveHandler');
+const FSHandler = require('@adobe/helix-importer/src/handlers/FSHandler');
+const ExcelHandler = require('@adobe/helix-importer/src/handlers/ExcelHandler');
+const FastlyHandler = require('@adobe/helix-importer/src/handlers/FastlyHandler');
 
-const OneDriveHandler = require('./handlers/OneDriveHandler');
-const FSHandler = require('./handlers/FSHandler');
-const ExcelHandler = require('./handlers/ExcelHandler');
-const FastlyHandler = require('./handlers/FastlyHandler');
+const { load: loadMappings } = require('./mappings');
 
 const OUTPUT_PATH = 'en';
 

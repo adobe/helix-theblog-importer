@@ -8,5 +8,7 @@ logs
 .DS_Store
 test-results.xml
 .env
-output
+
 .cache
+output
+input

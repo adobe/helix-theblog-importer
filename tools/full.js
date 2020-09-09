@@ -14,12 +14,14 @@
 require('dotenv').config();
 
 const path = require('path');
-const CsvFile = require('./CsvFile');
-const ExcelHandler = require('../handlers/ExcelHandler');
-const { main: importer } = require('../index');
-const { load: loadMappings } = require('../mappings');
 
-const URLS_XLSX = '/importer/urls.xlsx';
+const ExcelHandler = require('@adobe/helix-importer/src/handlers/ExcelHandler');
+const CsvFile = require('@adobe/helix-importer/src/handlers/CsvFile');
+
+const { main: importer } = require('../src/index');
+const { load: loadMappings } = require('../src/mappings');
+
+const URLS_XLSX = '/importer/cmo/urls.xlsx';
 const URLS_XLSX_WORKSHEET = 'urls';
 const URLS_XLSX_TABLE = 'listOfURLS';
 
